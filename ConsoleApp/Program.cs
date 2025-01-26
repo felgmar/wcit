@@ -10,7 +10,11 @@ namespace ConsoleApp
         [MTAThread]
         internal static int Main(string[] args)
         {
-            Parameters parameters = new();
+            Parameters parameters = new()
+            {
+                DiskNumber = -1,
+                ImageIndex = -1,
+            };
 
             try
             {
