@@ -139,7 +139,8 @@ namespace WindowsInstallerLib
 
             #region DiskNumber
             if (string.IsNullOrEmpty(parameters.DiskNumber.ToString()) ||
-                string.IsNullOrWhiteSpace(parameters.DiskNumber.ToString()))
+                string.IsNullOrWhiteSpace(parameters.DiskNumber.ToString()) ||
+                parameters.DiskNumber == -1)
             {
                 int p_DiskNumber;
 
@@ -236,7 +237,8 @@ namespace WindowsInstallerLib
 
             #region ImageIndex
             if (string.IsNullOrEmpty(parameters.ImageIndex.ToString()) ||
-                string.IsNullOrWhiteSpace(parameters.ImageIndex.ToString()))
+                string.IsNullOrWhiteSpace(parameters.ImageIndex.ToString()) ||
+                parameters.ImageIndex == -1)
             {
                 DeployManager.GetImageInfo(ref parameters);
 
