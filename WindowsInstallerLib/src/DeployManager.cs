@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Versioning;
 using Microsoft.Dism;
@@ -154,6 +155,60 @@ namespace WindowsInstallerLib
                     Console.WriteLine($"Size: {image.ImageSize}");
                     Console.WriteLine($"Arch: {image.Architecture}\n");
                 }
+            }
+            catch (DismException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                DismApi.Shutdown();
+            }
+        }
+
+        /// <summary>
+        /// Gets all Windows editions available using DISM, if any, and returns them as a collection.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns>
+        /// <see cref="DismImageInfoCollection"/>
+        /// </returns>
+        /// <exception cref="UnauthorizedAccessException"></exception>
+        internal static DismImageInfoCollection GetImageInfoD(ref Parameters parameters)
+        {
+            List<Tuple<int, string, UInt64, DismProcessorArchitecture>> TransitionalTuple = [];
+
+            ArgumentException.ThrowIfNullOrEmpty(parameters.ImageFilePath, nameof(parameters.ImageFilePath));
+
+            if (!PrivilegesManager.IsAdmin())
+            {
+                throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
+            }
+
+            try
+            {
+                DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
+
+                DismImageInfoCollection images = DismApi.GetImageInfo(parameters.ImageFilePath);
+
+                switch (images.Count)
+                {
+                    case > 1:
+                        Console.WriteLine($"\nFound {images.Count} images in {parameters.ImageFilePath}, shown below.\n", ConsoleColor.Yellow);
+                        break;
+                    case 1:
+                        Console.WriteLine($"\nFound {images.Count} image in {parameters.ImageFilePath}, shown below.\n", ConsoleColor.Yellow);
+                        break;
+                    case 0:
+                        Console.WriteLine($"\nNo images were found in {parameters.ImageFilePath}\n", ConsoleColor.Red);
+                        throw new InvalidDataException($"images.Count is {images.Count}. This is considered to be invalid, the program cannot continue.");
+                }
+
+                return images;
             }
             catch (DismException)
             {
