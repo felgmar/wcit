@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Windows.Forms;
@@ -16,6 +17,7 @@ namespace wit
             ImageIndex = -1
         };
 
+        [RequiresUnreferencedCode("Calls System.ComponentModel.ComponentResourceManager.ApplyResources(Object, String)")]
         public MainWindow()
         {
 
