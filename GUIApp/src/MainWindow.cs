@@ -20,14 +20,6 @@ namespace wit
         [RequiresUnreferencedCode("Calls System.ComponentModel.ComponentResourceManager.ApplyResources(Object, String)")]
         public MainWindow()
         {
-
-            if (!Privileges.IsAdmin())
-            {
-                MessageBox.Show("You must have administrator privileges to run this program.",
-                                "Insufficient privileges", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                throw new UnauthorizedAccessException("You must have administrator privileges to run this program.");
-            }
-
             InitializeComponent();
         }
 
