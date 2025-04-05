@@ -18,13 +18,13 @@ namespace WindowsInstallerLib
     /// <param name="FirmwareType"></param>
     [SupportedOSPlatform("windows")]
     public struct Parameters(string DestinationDrive,
-                                    string EfiDrive,
-                                    int DiskNumber,
-                                    string SourceDrive,
-                                    int ImageIndex,
-                                    string ImageFilePath,
-                                    bool InstallExtraDrivers,
-                                    string FirmwareType)
+                             string EfiDrive,
+                             int DiskNumber,
+                             string SourceDrive,
+                             int ImageIndex,
+                             string ImageFilePath,
+                             bool InstallExtraDrivers,
+                             string FirmwareType)
     {
         public string DestinationDrive { get; set; } = DestinationDrive;
         public string EfiDrive { get; set; } = EfiDrive;
