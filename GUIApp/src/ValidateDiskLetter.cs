@@ -5,9 +5,16 @@ namespace wit
 {
     public partial class MainWindow
     {
-        private static void ShowMessage(string text)
+        private static void ShowMessage(string text, string caption)
         {
-            MessageBox.Show(text, "Duplicate letters", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            try
+            {
+                MessageBox.Show(text, caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch
+            {
+                throw;
+            }
         }
 
         private void ValidateDiskLetter(object? sender, EventArgs e)
@@ -16,13 +23,13 @@ namespace wit
             {
                 if (DestinationDrive.Text == EfiDrive.Text)
                 {
-                    ShowMessage("The OS drive letter cannot be the same as the bootloader drive.");
+                    ShowMessage("The OS drive letter cannot be the same as the bootloader drive.", "Duplicate letter");
                     DestinationDrive.Text = null;
                     EfiDrive.Text = null;
                 }
                 else if (DestinationDrive.Text == SourceDrive.Text)
                 {
-                    ShowMessage("The OS drive letter cannot be the same as the source drive.");
+                    ShowMessage("The OS drive letter cannot be the same as the source drive.", "Duplicate letter");
                     DestinationDrive.Text = null;
                     SourceDrive.Text = null;
                 }
@@ -32,13 +39,13 @@ namespace wit
             {
                 if (EfiDrive.Text == DestinationDrive.Text)
                 {
-                    ShowMessage("The bootloader drive letter cannot be the same as the OS drive.");
+                    ShowMessage("The bootloader drive letter cannot be the same as the OS drive.", "Duplicate letter");
                     EfiDrive.Text = null;
                     DestinationDrive.Text = null;
                 }
                 else if (EfiDrive.Text == SourceDrive.Text)
                 {
-                    ShowMessage("The bootloader drive letter cannot be the same as the source drive.");
+                    ShowMessage("The bootloader drive letter cannot be the same as the source drive.", "Duplicate letter");
                     EfiDrive.Text = null;
                     SourceDrive.Text = null;
                 }
@@ -48,13 +55,13 @@ namespace wit
             {
                 if (SourceDrive.Text == DestinationDrive.Text)
                 {
-                    ShowMessage("The source drive letter cannot be the same as the OS drive.");
+                    ShowMessage("The source drive letter cannot be the same as the OS drive.", "Duplicate letter");
                     SourceDrive.Text = null;
                     DestinationDrive.Text = null;
                 }
                 else if (SourceDrive.Text == EfiDrive.Text)
                 {
-                    ShowMessage("The source drive letter cannot be the same as the bootloader drive.");
+                    ShowMessage("The source drive letter cannot be the same as the bootloader drive.", "Duplicate letter");
                     SourceDrive.Text = null;
                     EfiDrive.Text = null;
                 }
