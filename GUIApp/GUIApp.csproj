@@ -15,6 +15,7 @@
     <AssemblyName>wit</AssemblyName>
     <RootNamespace>wit</RootNamespace>
     <Platforms>x64</Platforms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
