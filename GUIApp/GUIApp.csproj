@@ -16,6 +16,7 @@
     <RootNamespace>wit</RootNamespace>
     <Platforms>x64</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationHightDpiMode>SystemAware</ApplicationHightDpiMode>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
