@@ -1,7 +1,6 @@
 ﻿using Microsoft.Dism;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace WindowsInstallerLib
 {
