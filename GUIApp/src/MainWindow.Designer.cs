@@ -163,7 +163,7 @@ namespace wit
             resources.ApplyResources(ChooseISOImage, "ChooseISOImage");
             ChooseISOImage.Name = "ChooseISOImage";
             ChooseISOImage.UseVisualStyleBackColor = false;
-            ChooseISOImage.Click += ChooseISOImage_Click;
+            ChooseISOImage.Click += ChooseImage_Click;
             // 
             // SourceDrive
             // 
@@ -298,9 +298,9 @@ namespace wit
         private ComboBox DestinationDrive;
         private ComboBox EfiDrive;
         private Button RescanDisks;
-        private ComboBox SourceDrive;
         private SaveFileDialog saveFileDialog1;
         private Label SourceDrive_Label;
         private Button SourceDrive_Scan;
+        private ComboBox SourceDrive;
     }
 }

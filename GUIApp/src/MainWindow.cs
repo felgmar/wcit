@@ -48,58 +48,58 @@ namespace wit
             Application.Exit();
         }
 
-        private void ChooseISOImage_Click(object sender, EventArgs e)
+        private void ChooseImage_Click(object sender, EventArgs e)
         {
+            SourceDrive_Scan.Enabled = false;
+
+            if (ImageFilePath.Text == "No image file is selected.")
+            {
+                OpenFileDialog OpenFileDialog = new()
+                {
+                    Filter = "ESD file (*.esd)|*.esd|WIM file (*.wim)|*.wim",
+                    CheckFileExists = true,
+                    CheckPathExists = true,
+                    AddExtension = true,
+                };
+
+                DialogResult DialogResult = OpenFileDialog.ShowDialog();
+
+                if (DialogResult == DialogResult.Cancel)
+                {
+                    SourceDrive_Label.Enabled = true;
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(OpenFileDialog.FileName))
+                {
+                    MessageBox.Show("No image file was selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    SourceDrive_Scan.Enabled = true;
+                    ImageFilePath.Text = "No image file is selected";
+                    return;
+                }
+
+                if (!OpenFileDialog.FileName.Contains("install"))
+                {
+                    MessageBox.Show("Invalid image file. It must be 'install.wim' or 'install.esd'.", "Invalid file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    SourceDrive_Scan.Enabled = true;
+                    throw new InvalidDataException("Invalid image file. It must be 'install.wim' or 'install.esd'.");
+                }
+
+                parameters.ImageFilePath = OpenFileDialog.FileName;
+                ImageFilePath.Text = parameters.ImageFilePath;
+                SourceDrive.SelectedItem = Path.GetPathRoot(ImageFilePath.Text?.TrimEnd('\\'));
+            }
+
+            if (ImageList.Columns.Count >= 1)
+            {
+                ImageList.Columns.Clear();
+            }
+
             try
             {
-                SourceDrive_Scan.Enabled = false;
-
-                if (ImageFilePath.Text == "No image file is selected.")
-                {
-                    OpenFileDialog OpenFileDialog = new()
-                    {
-                        Filter = "ESD file (*.esd)|*.esd|WIM file (*.wim)|*.wim",
-                        CheckFileExists = true,
-                        CheckPathExists = true,
-                        AddExtension = true,
-                    };
-
-                    DialogResult DialogResult = OpenFileDialog.ShowDialog();
-
-                    if (DialogResult == DialogResult.Cancel)
-                    {
-                        return;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(OpenFileDialog.FileName))
-                    {
-                        MessageBox.Show("No image file was selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                        ImageFilePath.Text = "No image file is selected";
-
-                        return;
-                    }
-
-                    if (!OpenFileDialog.FileName.Contains("install"))
-                    {
-                        MessageBox.Show("Invalid image file. It must be 'install.wim' or 'install.esd'.", "Invalid file", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                        throw new InvalidDataException("Invalid image file. It must be 'install.wim' or 'install.esd'.");
-                    }
-
-                    ImageFilePath.Text = OpenFileDialog.FileName;
-
-                    parameters.ImageFilePath = ImageFilePath.Text;
-                }
-
-                if (ImageList.Columns.Count >= 1)
-                {
-                    ImageList.Columns.Clear();
-                }
-
                 GetImageInfo(sender, e);
             }
-            catch (Exception)
+            catch
             {
                 throw;
             }
