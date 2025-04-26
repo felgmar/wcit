@@ -57,10 +57,10 @@ namespace WindowsInstallerLib
                 process.StandardInput.WriteLine($"select disk {DiskNumber}");
                 process.StandardInput.WriteLine("clean");
                 process.StandardInput.WriteLine("convert gpt");
+                process.StandardInput.WriteLine("create partition msr size=16");
                 process.StandardInput.WriteLine("create partition efi size=100");
                 process.StandardInput.WriteLine("format fs=fat32 quick");
                 process.StandardInput.WriteLine($"assign letter {EfiDrive}");
-                process.StandardInput.WriteLine("create partition msr size=16");
                 process.StandardInput.WriteLine("create partition primary");
                 process.StandardInput.WriteLine("format fs=ntfs quick");
                 process.StandardInput.WriteLine($"assign letter {DestinationDrive}");
