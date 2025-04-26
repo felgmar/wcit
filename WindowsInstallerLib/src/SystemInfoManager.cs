@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -16,7 +17,7 @@ namespace WindowsInstallerLib
         /// <param name="size"></param>
 
         [LibraryImport("kernel32.dll", EntryPoint = "GetFirmwareEnvironmentVariableA", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
-        [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvStdcall)])]
+        [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
         private static partial uint GetFirmwareType(string lpName, string lpGUID, IntPtr pBuffer, uint size);
 
         /// <summary>
