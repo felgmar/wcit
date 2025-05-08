@@ -22,7 +22,6 @@ namespace WindowsInstallerLib
                 process.Start();
                 process.WaitForExit();
                 ExitCode = process.ExitCode;
-
             }
             catch (InvalidOperationException)
             {
@@ -37,6 +36,14 @@ namespace WindowsInstallerLib
                 throw;
             }
 
+            return ExitCode;
+        }
+
+        internal static int StartCmdProcessThreaded(string fileName, string args)
+        {
+            ThreadManager.CreateThread(
+                () => StartCmdProcess(fileName, args)
+            );
             return ExitCode;
         }
 
@@ -108,6 +115,15 @@ namespace WindowsInstallerLib
             return ExitCode;
         }
 
+        internal static int StartDiskPartProcessThreaded(int DiskNumber, string EfiDrive, string DestinationDrive)
+        {
+            ThreadManager.CreateThread(
+                () => StartDiskPartProcess(DiskNumber, EfiDrive, DestinationDrive)
+            );
+
+            return ExitCode;
+        }
+
         internal static int StartDismProcess(string args)
         {
             Process process = new();
@@ -137,6 +153,15 @@ namespace WindowsInstallerLib
             {
                 process.Close();
             }
+
+            return ExitCode;
+        }
+
+        internal static int StartDismProcessThreaded(string args)
+        {
+            ThreadManager.CreateThread(
+                () => StartDismProcess(args)
+            );
 
             return ExitCode;
         }
@@ -174,6 +199,15 @@ namespace WindowsInstallerLib
             {
                 process.Close();
             }
+
+            return ExitCode;
+        }
+
+        internal static int StartProcessThreaded(string filename, string args)
+        {
+            ThreadManager.CreateThread(
+                () => StartProcess(filename, args)
+            );
 
             return ExitCode;
         }
