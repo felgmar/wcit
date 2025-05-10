@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.Versioning;
+using System.Threading;
 using Microsoft.Dism;
 
 namespace WindowsInstallerLib
@@ -94,20 +95,24 @@ namespace WindowsInstallerLib
                 ArgumentException.ThrowIfNullOrWhiteSpace(nameof(parameters.SourceDrive));
                 ArgumentException.ThrowIfNullOrWhiteSpace(nameof(parameters.ImageFilePath));
 
-                if (File.Exists(@$"{parameters.SourceDrive}\sources\install.esd"))
+                string IMAGE_FILE_ESD = Path.Join(parameters.SourceDrive, @"\sources\install.esd");
+                string IMAGE_FILE_WIM = Path.Join(parameters.SourceDrive, @"\sources\install.wim");
+
+                bool IS_IMAGE_FILE_ESD = File.Exists(IMAGE_FILE_ESD);
+                bool IS_IMAGE_FILE_WIM = File.Exists(IMAGE_FILE_WIM);
+
+                if (IS_IMAGE_FILE_ESD)
                 {
-                    parameters.ImageFilePath = @$"{parameters.SourceDrive}\sources\install.esd";
+                    return IMAGE_FILE_ESD;
                 }
-                else if (File.Exists(@$"{parameters.SourceDrive}\sources\install.wim"))
+                else if (IS_IMAGE_FILE_WIM)
                 {
-                    parameters.ImageFilePath = @$"{parameters.SourceDrive}\sources\install.wim";
+                    return IMAGE_FILE_WIM;
                 }
                 else
                 {
                     throw new FileNotFoundException($"Could not find a valid image file at {parameters.SourceDrive}.");
                 }
-
-                return parameters.ImageFilePath;
             }
             catch (Exception)
             {
@@ -176,22 +181,23 @@ namespace WindowsInstallerLib
         /// <returns></returns>
         internal static DismImageInfoCollection GetImageInfoT(ref Parameters parameters)
         {
+            if (string.IsNullOrEmpty(parameters.ImageFilePath) ||
+                string.IsNullOrWhiteSpace(parameters.ImageFilePath))
+            {
+                throw new FileNotFoundException("No image file was specified.", parameters.ImageFilePath);
+            }
+
+            switch (PrivilegesManager.IsAdmin())
+            {
+                case true:
+                    DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
+                    break;
+                case false:
+                    throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
+            }
+
             try
             {
-                if (string.IsNullOrEmpty(parameters.ImageFilePath))
-                {
-                    throw new FileNotFoundException("No image file was specified.", parameters.ImageFilePath);
-                }
-
-                switch (PrivilegesManager.IsAdmin())
-                {
-                    case true:
-                        DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
-                        break;
-                    case false:
-                        throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
-                }
-
                 DismImageInfoCollection images = DismApi.GetImageInfo(parameters.ImageFilePath);
 
                 return images;
@@ -213,13 +219,21 @@ namespace WindowsInstallerLib
         /// <summary>
         /// Installs the bootloader to the EFI drive of a new Windows installation.
         /// </summary>
-        /// <param name="InstallationSettings"/>
+        /// <param name="parameters"
         /// <returns></returns>
         internal static int InstallBootloader(ref Parameters parameters)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, nameof(parameters.DestinationDrive));
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.EfiDrive, nameof(parameters.EfiDrive));
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType, nameof(parameters.FirmwareType));
+
+            string EFI_BOOT_PATH = Path.Join(parameters.EfiDrive, @"\EFI\Boot");
+            string EFI_MICROSOFT_PATH = Path.Join(parameters.EfiDrive, @"\EFI\Microsoft");
+            string WINDIR_PATH = Path.Join(parameters.DestinationDrive, @"\windows");
+
+            bool EFI_BOOT_EXISTS = Directory.Exists(EFI_BOOT_PATH);
+            bool EFI_MICROSOFT_EXISTS = Directory.Exists(EFI_MICROSOFT_PATH);
+            bool WINDIR_EXISTS = Directory.Exists(WINDIR_PATH);
 
             if (!PrivilegesManager.IsAdmin())
             {
@@ -228,21 +242,19 @@ namespace WindowsInstallerLib
 
             try
             {
-                if (Directory.Exists(@$"{parameters.EfiDrive}\EFI\Boot") || Directory.Exists($@"{parameters.EfiDrive}\EFI\Microsoft"))
+                if (EFI_BOOT_EXISTS || EFI_MICROSOFT_EXISTS)
                 {
                     throw new IOException($"The drive letter {parameters.EfiDrive} is already in use.");
                 }
-                else
+                
+                if (!WINDIR_EXISTS)
                 {
-                    if (!Directory.Exists(@$"{parameters.DestinationDrive}windows"))
-                    {
-                        throw new DirectoryNotFoundException(@$"The directory {parameters.DestinationDrive}windows does not exist!");
-                    }
-
-                    Console.WriteLine($"Firmware type is set to: {parameters.FirmwareType}");
-                    Console.WriteLine($"\n==> Installing bootloader to drive {parameters.EfiDrive} in disk {parameters.DiskNumber}");
-                    ProcessManager.StartCmdProcess("bcdboot", @$"{parameters.DestinationDrive}\windows /s {parameters.EfiDrive} /f {parameters.FirmwareType}");
+                    throw new DirectoryNotFoundException(@$"The directory {WINDIR_PATH} does not exist!");
                 }
+
+                Console.WriteLine($"Firmware type is set to: {parameters.FirmwareType}");
+                Console.WriteLine($"\n==> Installing bootloader to drive {parameters.EfiDrive} in disk {parameters.DiskNumber}");
+                ProcessManager.StartCmdProcess("bcdboot", @$"{WINDIR_PATH} /s {parameters.EfiDrive} /f {parameters.FirmwareType}");
             }
             catch (IOException)
             {

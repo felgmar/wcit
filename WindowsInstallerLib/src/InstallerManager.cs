@@ -269,7 +269,7 @@ namespace WindowsInstallerLib
                         Console.WriteLine($"\nThe installer has set the firmware type to {parameters.FirmwareType}.", ConsoleColor.Yellow);
                         break;
                     default:
-                        throw new InvalidDataException(nameof(parameters.FirmwareType));
+                        throw new InvalidDataException($"Invalid firmware type: {parameters.FirmwareType}");
                 }
             }
             #endregion
@@ -282,35 +282,41 @@ namespace WindowsInstallerLib
         [SupportedOSPlatform("windows")]
         public static void InstallWindows(ref Parameters parameters)
         {
+            if (parameters.DiskNumber.Equals(-1))
+            {
+                throw new InvalidDataException("No disk number was specified, required to know where to install Windows at.");
+            }
+
+            if (string.IsNullOrWhiteSpace(parameters.EfiDrive))
+            {
+                throw new InvalidDataException("No EFI drive was specified, required for the bootloader installation.");
+            }
+
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath);
+            ArgumentOutOfRangeException.ThrowIfEqual(parameters.ImageIndex, -1);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType);
+
             try
             {
-                if (parameters.DiskNumber.Equals(-1))
-                {
-                    throw new InvalidDataException("No disk number was specified, required to know where to install Windows at.");
-                }
-
-                if (string.IsNullOrWhiteSpace(parameters.EfiDrive))
-                {
-                    throw new InvalidDataException("No EFI drive was specified, required for the bootloader installation.");
-                }
-
-                ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive);
-                ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath);
-                ArgumentOutOfRangeException.ThrowIfEqual(parameters.ImageIndex, -1);
-                ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType);
-
-                switch (parameters.FirmwareType)
-                {
-                    case "UEFI":
-                        break;
-                    case "BIOS":
-                        break;
-                    default:
-                        throw new InvalidDataException($"Invalid firmware type: {parameters.FirmwareType}");
-                }
-
                 DiskManager.FormatDisk(ref parameters);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            try
+            {
                 DeployManager.ApplyImage(ref parameters);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            try
+            {
                 DeployManager.InstallBootloader(ref parameters);
             }
             catch (Exception)
