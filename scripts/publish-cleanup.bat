@@ -1,5 +1,9 @@
 @ECHO off
 
-START "WCIT CLEANUP SCRIPT" /B scripts/cleanup.bat
+CALL %~dp0cleanup.bat
 
-dotnet publish "Windows Installer.sln" --nologo --self-contained --property:OutputPath=..\build\ --configuration "Release"
+dotnet publish "Windows Installer.sln" --nologo --self-contained --property:OutputPath=%~dp0..\build\ --configuration "Release"
+
+MOVE /Y %~dp0..\build\publish %~dp0..\
+RMDIR /Q /S %~dp0..\build
+MOVE /Y %~dp0..\publish %~dp0..\build
