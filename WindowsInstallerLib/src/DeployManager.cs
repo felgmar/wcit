@@ -7,18 +7,29 @@ using Microsoft.Dism;
 namespace WindowsInstallerLib
 {
     /// <summary>
-    /// Manages the deployment of Windows to a new drive.
+    /// Provides methods for managing the deployment of Windows images, including adding drivers, applying images,
+    /// retrieving image information, and installing the bootloader.
     /// </summary>
+    /// <remarks>This class is designed to work with Windows Deployment Image Servicing and Management (DISM)
+    /// APIs and requires administrative privileges for most operations. It is supported only on Windows
+    /// platforms.</remarks>
     [SupportedOSPlatform("windows")]
     internal static class DeployManager
     {
         /// <summary>
-        /// Adds drivers to the Windows image.
+        /// Adds one or more drivers to the specified offline Windows image.
         /// </summary>
-        /// <param name="parameters"></param>
-        /// <param name="DriversSource"></param>
-        /// <exception cref="DirectoryNotFoundException"></exception>
-        /// <exception cref="UnauthorizedAccessException"></exception>
+        /// <remarks>This method initializes the DISM API, opens an offline session for the specified
+        /// destination drive, and adds the provided drivers. If <paramref name="DriversSource"/> is an array, all
+        /// drivers in the array are added recursively. Otherwise, a single driver is added. The DISM API is properly
+        /// shut down after the operation completes, even if an exception occurs.</remarks>
+        /// <param name="parameters">A reference to a <see cref="Parameters"/> object containing details about the image file path and
+        /// destination drive. The <see cref="Parameters.ImageFilePath"/> and <see cref="Parameters.DestinationDrive"/>
+        /// properties must not be null, empty, or whitespace.</param>
+        /// <param name="DriversSource">The source path of the driver or drivers to be added. This can be a single driver file path or an array of
+        /// driver paths. The value must not be null, empty, or whitespace.</param>
+        /// <exception cref="DirectoryNotFoundException">Thrown if the directory specified in <see cref="Parameters.DestinationDrive"/> does not exist.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have administrative privileges required to initialize the DISM API.</exception>
         internal static void AddDrivers(ref Parameters parameters, string DriversSource)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath, nameof(parameters.ImageFilePath));
@@ -56,10 +67,17 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
-        /// Deploys an image of Windows to the specified <paramref name="DestinationDrive"/>.
-        /// What gets installed is specified by <paramref name="SourceDrive"/> and the <paramref name="Index"/>.
+        /// Applies a Windows image to the specified destination drive.
         /// </summary>
-        /// <param name="parameters"></param>
+        /// <remarks>This method uses the Deployment Image Servicing and Management (DISM) tool to apply
+        /// the specified image. Ensure that the destination drive does not already contain a Windows deployment, as the
+        /// method will not overwrite an existing installation. Administrative privileges are required to execute this
+        /// operation.</remarks>
+        /// <param name="parameters">A <see cref="Parameters"/> object containing the necessary details for the operation, including the
+        /// destination drive, image file path, disk number, and image index.</param>
+        /// <returns>An integer representing the exit code of the operation. Returns <c>1</c> if the destination drive already
+        /// contains a Windows deployment. Otherwise, returns the exit code of the underlying process.</returns>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the current user does not have administrative privileges required to perform the operation.</exception>
         internal static int ApplyImage(ref Parameters parameters)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, nameof(parameters.DestinationDrive));
@@ -84,10 +102,15 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
-        /// Gets the image file from the source drive.
+        /// Determines the path to a valid image file (either "install.esd" or "install.wim")  located in the "sources"
+        /// directory of the specified source drive.
         /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
+        /// <remarks>This method checks for the presence of "install.esd" and "install.wim" files in the
+        /// "sources" directory of the drive specified by <see cref="Parameters.SourceDrive"/>. If both files are
+        /// present, "install.esd" is returned.</remarks>
+        /// <param name="parameters">A reference to a <see cref="Parameters"/> object containing the source drive and image file path. The <see
+        /// cref="Parameters.SourceDrive"/> property must specify the root directory of the source drive.</param>
+        /// <returns>The full path to the image file ("install.esd" or "install.wim") if found.</returns>
         internal static string GetImageFile(ref Parameters parameters)
         {
             try
@@ -121,9 +144,14 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
-        /// Gets all Windows editions available using DISM, if any.
+        /// Retrieves and displays information about the images contained in the specified image file.
         /// </summary>
-        /// <param name="parameters"></param>
+        /// <remarks>This method initializes the DISM API, retrieves image information from the specified
+        /// file,  and outputs details about each image to the console. The method requires administrative privileges 
+        /// to execute and will throw an exception if the caller lacks sufficient privileges.</remarks>
+        /// <param name="parameters">A reference to a <see cref="Parameters"/> object containing the path to the image file. The <see
+        /// cref="Parameters.ImageFilePath"/> property must not be null or empty.</param>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the caller does not have administrative privileges.</exception>
         internal static void GetImageInfo(ref Parameters parameters)
         {
             ArgumentException.ThrowIfNullOrEmpty(parameters.ImageFilePath, nameof(parameters));
@@ -175,10 +203,16 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
-        /// Gets all Windows editions available using DISM, if any.
+        /// Retrieves information about the images contained in the specified image file.
         /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
+        /// <remarks>This method initializes the DISM API to retrieve image information and ensures proper
+        /// shutdown of the API after the operation is complete. Ensure that the caller has sufficient privileges to
+        /// execute this method.</remarks>
+        /// <param name="parameters">A reference to a <see cref="Parameters"/> object that contains the path to the image file. The <see
+        /// cref="Parameters.ImageFilePath"/> property must not be null, empty, or consist only of whitespace.</param>
+        /// <returns>A <see cref="DismImageInfoCollection"/> containing details about the images in the specified file.</returns>
+        /// <exception cref="FileNotFoundException">Thrown if the <see cref="Parameters.ImageFilePath"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the current user does not have administrative privileges required to initialize the DISM API.</exception>
         internal static DismImageInfoCollection GetImageInfoT(ref Parameters parameters)
         {
             if (string.IsNullOrEmpty(parameters.ImageFilePath) ||
@@ -217,10 +251,18 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
-        /// Installs the bootloader to the EFI drive of a new Windows installation.
+        /// Installs the bootloader to the specified EFI system partition.
         /// </summary>
-        /// <param name="parameters"
-        /// <returns></returns>
+        /// <remarks>This method requires administrative privileges to execute. Ensure that the calling
+        /// process has sufficient permissions. The method validates the existence of required directories and checks
+        /// for conflicts before proceeding with the installation.</remarks>
+        /// <param name="parameters">A reference to a <see cref="Parameters"/> object containing the configuration for the bootloader
+        /// installation. The <see cref="Parameters.DestinationDrive"/> property specifies the drive containing the
+        /// Windows installation. The <see cref="Parameters.EfiDrive"/> property specifies the EFI system partition
+        /// where the bootloader will be installed. The <see cref="Parameters.FirmwareType"/> property specifies the
+        /// firmware type (e.g., "UEFI" or "BIOS").</param>
+        /// <returns>The exit code of the bootloader installation process. A value of 0 typically indicates success.</returns>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have administrative privileges required to perform the installation.</exception>
         internal static int InstallBootloader(ref Parameters parameters)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, nameof(parameters.DestinationDrive));
