@@ -143,6 +143,14 @@ namespace WindowsInstallerLib
             return ExitCode;
         }
 
+        internal static int StartDiskPartProcessThreaded(int DiskNumber, string EfiDrive, string DestinationDrive)
+        {
+            ThreadManager.CreateThread(
+                () => StartDiskPartProcess(DiskNumber, EfiDrive, DestinationDrive)
+            );
+            return ExitCode;
+        }
+
         /// <summary>
         /// Starts a new process to execute the Deployment Image Servicing and Management (DISM) tool with the specified
         /// arguments.
