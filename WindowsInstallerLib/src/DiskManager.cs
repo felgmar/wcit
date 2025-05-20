@@ -7,8 +7,11 @@ using System.Runtime.Versioning;
 namespace WindowsInstallerLib
 {
     /// <summary>
-    /// Manages the disks on the system.
+    /// Provides functionality for managing and interacting with system disks on Windows platforms.
     /// </summary>
+    /// <remarks>This class includes methods for formatting disks, listing available disks, and retrieving
+    /// disk information. It requires administrative privileges for certain operations, such as formatting a
+    /// disk.</remarks>
     [SupportedOSPlatform("windows")]
     internal class DiskManager
     {
@@ -41,8 +44,13 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
-        /// Lists all the disks on the system.
+        /// Lists all disk drives on the system and displays their details, including disk number, model, and device ID.
         /// </summary>
+        /// <remarks>This method queries the system's disk drives using WMI (Windows Management
+        /// Instrumentation) and outputs the retrieved information to the console. The details include the disk number,
+        /// model, and device ID for each disk drive found. <para> Note that this method is intended for internal use
+        /// and writes directly to the console. It does not return the retrieved data or provide a way to
+        /// programmatically access it. </para></remarks>
         internal static void ListAll()
         {
             try
@@ -64,9 +72,9 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
-        /// Lists all disk on the system using DriveInfo.
+        /// Retrieves an array of all available drive information on the system.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An array of <see cref="DriveInfo"/> objects representing the drives available on the system.</returns>
         internal static DriveInfo[] GetDisksT()
         {
             try

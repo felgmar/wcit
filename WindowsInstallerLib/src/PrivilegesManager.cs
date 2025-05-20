@@ -6,14 +6,21 @@ using System.Security.Principal;
 namespace WindowsInstallerLib
 {
     /// <summary>
-    /// Manages the privileges of the current user.
+    /// Provides utility methods for managing and checking user privileges.
     /// </summary>
+    /// <remarks>This class includes methods to determine the current user's privilege level, such as whether
+    /// the user has administrative rights. It is designed for use on Windows platforms and may throw exceptions if
+    /// security or identity-related issues occur.</remarks>
     internal static class PrivilegesManager
     {
         /// <summary>
-        /// Checks if the current user is an administrator.
+        /// Determines whether the current user has administrative privileges on a Windows platform.
         /// </summary>
-        /// <returns></returns>
+        /// <remarks>This method is only supported on Windows platforms. It uses the <see
+        /// cref="WindowsPrincipal"/> and <see cref="WindowsIdentity"/> classes to check if the current user belongs to
+        /// the Administrators group.</remarks>
+        /// <returns><see langword="true"/> if the current user is a member of the Administrators group; otherwise, <see
+        /// langword="false"/>.</returns>
         [SupportedOSPlatform("windows")]
         internal static bool IsAdmin()
         {
