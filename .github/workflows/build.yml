@@ -36,7 +36,7 @@ jobs:
         run: dotnet test
 
       - name: Build installer
-        run: scripts/compile-installer-cleanup.bat
+        run: scripts/ci-compile-installer-cleanup.bat
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
