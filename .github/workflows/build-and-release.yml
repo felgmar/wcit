@@ -1,0 +1,64 @@
+name: Build and release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Setup MSBuild.exe
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore project dependencies
+        run: dotnet restore
+
+      - name: Execute unit tests
+        run: dotnet test
+
+      - name: Build installer
+        run: |
+          cd scripts
+          compile-installer-cleanup.bat
+          cd ..
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_files
+          path: |
+            build-installer\*.exe
+
+  upload:
+    needs: build
+    runs-on: windows-latest
+    if: ${{ needs.build.result == 'sucess' }} and github.ref_type == 'tag'
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build_files
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.exe
