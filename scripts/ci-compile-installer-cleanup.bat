@@ -6,7 +6,7 @@ SET COMPILER="%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" /Q
 FOR /F "tokens=2 delims=\\" %%A IN ('whoami') DO SET USERNAME="%%A"
 SET LICENSE="%~dp0..\LICENSE"
 SET OUTPUTDIR="%~dp0..\build-installer"
-SET SETUPSCRIPT="%~dp0scripts\wcit-setup.iss"
+SET SETUPSCRIPT="%~dp0\wcit-setup.iss"
 SET USERNAME="felgmar"
 
 IF NOT EXIST %LICENSE% (
