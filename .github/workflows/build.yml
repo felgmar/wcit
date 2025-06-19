@@ -38,7 +38,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: installer_build_files
+          name: build_files
           path: |
             build-installer\*.exe
 
@@ -50,7 +50,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: installer_build_files
+          name: build_files
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
