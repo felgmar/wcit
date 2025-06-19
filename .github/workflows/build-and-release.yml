@@ -38,7 +38,7 @@ jobs:
       - name: Build installer
         run: |
           cd scripts
-          compile-installer-cleanup.bat
+          ./compile-installer-cleanup.bat
           cd ..
 
       - name: Upload build artifacts
