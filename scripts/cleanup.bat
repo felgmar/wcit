@@ -2,6 +2,7 @@
 
 CALL :REMOVEDIR %~dp0..\.vs
 CALL :REMOVEDIR %~dp0..\build
+CALL :REMOVEDIR %~dp0..\build-installer
 CALL :REMOVEDIR %~dp0..\ConsoleApp\bin
 CALL :REMOVEDIR %~dp0..\ConsoleApp\obj
 CALL :REMOVEDIR %~dp0..\WindowsInstallerLib\bin
@@ -17,9 +18,9 @@ IF %ERRORLEVEL%==0 (
 
 :REMOVEDIR
     IF EXIST %* (
-        ECHO REMOVING %* DIRECTORY...
+        ECHO REMOVING DIRECTORY: %*...
         RMDIR /S /Q %*
         CALL :EXITWITHERROR
     ) ELSE (
-        ECHO %* DIRECTORY NOT FOUND
+        ECHO [!] DIRECTORY NOT FOUND: %*
     )
