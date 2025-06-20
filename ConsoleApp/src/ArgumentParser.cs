@@ -64,6 +64,9 @@ namespace ConsoleApp
                     case "/firmwaretype":
                         parameters.FirmwareType = args[Array.IndexOf(args, arg) + 1].ToUpperInvariant();
                         continue;
+                    case "/multithreaded":
+                        parameters.UseMultiThreading = args[Array.IndexOf(args, arg) + 1].Equals("TRUE", StringComparison.OrdinalIgnoreCase);
+                        continue;
                 }
             }
 #if DEBUG
@@ -76,6 +79,7 @@ namespace ConsoleApp
             Console.WriteLine($"  Image File Path: {parameters.ImageFilePath}");
             Console.WriteLine($"  Install Extra Drivers: {parameters.InstallExtraDrivers}");
             Console.WriteLine($"  Firmware Type: {parameters.FirmwareType}");
+            Console.WriteLine($"  Multithreaded: {parameters.UseMultiThreading}");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
 #endif
