@@ -1,8 +1,7 @@
+using Microsoft.Dism;
 using System;
 using System.IO;
 using System.Runtime.Versioning;
-using System.Threading;
-using Microsoft.Dism;
 
 namespace WindowsInstallerLib
 {
@@ -30,20 +29,23 @@ namespace WindowsInstallerLib
         /// driver paths. The value must not be null, empty, or whitespace.</param>
         /// <exception cref="DirectoryNotFoundException">Thrown if the directory specified in <see cref="Parameters.DestinationDrive"/> does not exist.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have administrative privileges required to initialize the DISM API.</exception>
-        internal static void AddDrivers(ref Parameters parameters, string DriversSource)
+        internal static void AddDrivers(ref Parameters parameters,
+                                        string DriversSource,
+                                        bool ForceUnsigned = false,
+                                        bool Recursive = false)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath, nameof(parameters.ImageFilePath));
             ArgumentException.ThrowIfNullOrWhiteSpace(DriversSource, nameof(DriversSource));
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, nameof(parameters.DestinationDrive));
 
-            if (!Directory.Exists(parameters.DestinationDrive))
-            {
-                throw new DirectoryNotFoundException($"Could not find the directory: {parameters.DestinationDrive}");
-            }
-
             if (!PrivilegesManager.IsAdmin())
             {
                 throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
+            }
+
+            if (!Directory.Exists(parameters.DestinationDrive))
+            {
+                throw new DirectoryNotFoundException($"Could not find the directory: {parameters.DestinationDrive}");
             }
 
             try
@@ -53,11 +55,11 @@ namespace WindowsInstallerLib
 
                 if (DriversSource.GetType().IsArray)
                 {
-                    DismApi.AddDriversEx(session, DriversSource, forceUnsigned: false, recursive: true);
+                    DismApi.AddDriversEx(session, DriversSource, ForceUnsigned, Recursive);
                 }
                 else
                 {
-                    DismApi.AddDriver(session, DriversSource, forceUnsigned: false);
+                    DismApi.AddDriver(session, DriversSource, ForceUnsigned);
                 }
             }
             finally
