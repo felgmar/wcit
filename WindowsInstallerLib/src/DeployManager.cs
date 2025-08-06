@@ -253,6 +253,56 @@ namespace WindowsInstallerLib
         }
 
         /// <summary>
+        /// Installs additional drivers to the specified offline Windows image.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <exception cref="UnauthorizedAccessException"></exception>
+        internal static void InstallAdditionalDrivers(ref Parameters parameters)
+        {
+            DismSession session;
+
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.AdditionalDriversDrive, nameof(parameters));
+
+            if (!PrivilegesManager.IsAdmin())
+            {
+                throw new UnauthorizedAccessException("You do not have enough privileges to install additional drivers.");
+            }
+
+            try
+            {
+                switch (PrivilegesManager.IsAdmin())
+                {
+                    case true:
+                        DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
+                        break;
+                    case false:
+                        throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
+                }
+
+                session = DismApi.OpenOfflineSession(parameters.DestinationDrive);
+
+            }
+            catch (DismException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            try
+            {
+                DismApi.AddDriversEx(session, parameters.AdditionalDriversDrive, false, true);
+            }
+            finally
+            {
+                session.Close();
+                DismApi.Shutdown();
+            }
+        }
+
+        /// <summary>
         /// Installs the bootloader to the specified EFI system partition.
         /// </summary>
         /// <remarks>This method requires administrative privileges to execute. Ensure that the calling
@@ -290,7 +340,7 @@ namespace WindowsInstallerLib
                 {
                     throw new IOException($"The drive letter {parameters.EfiDrive} is already in use.");
                 }
-                
+
                 if (!WINDIR_EXISTS)
                 {
                     throw new DirectoryNotFoundException(@$"The directory {WINDIR_PATH} does not exist!");
@@ -308,7 +358,7 @@ namespace WindowsInstallerLib
             {
                 throw;
             }
-            
+
             return ProcessManager.ExitCode;
         }
     }

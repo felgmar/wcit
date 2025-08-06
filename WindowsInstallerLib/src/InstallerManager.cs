@@ -17,7 +17,7 @@ namespace WindowsInstallerLib
     /// <param name="SourceDrive">Gets or sets the source drive containing the data to be imaged.</param>
     /// <param name="ImageIndex">Gets or sets the index of the image within the image file to be applied.</param>
     /// <param name="ImageFilePath">Gets or sets the file path of the image file to be used in the operation.</param>
-    /// <param name="InstallExtraDrivers">Gets or sets a value indicating whether additional drivers should be installed during the imaging process.</param>
+    /// <param name="AdditionalDriversDrive">Gets or sets a value indicating whether additional drivers should be installed during the imaging process.</param>
     /// <param name="FirmwareType">Gets or sets the firmware type of the system being imaged.</param>
     [SupportedOSPlatform("windows")]
     public struct Parameters(string DestinationDrive,
@@ -26,7 +26,7 @@ namespace WindowsInstallerLib
                              string SourceDrive,
                              int ImageIndex,
                              string ImageFilePath,
-                             bool InstallExtraDrivers,
+                             string AdditionalDriversDrive,
                              string FirmwareType)
     {
         public string DestinationDrive { get; set; } = DestinationDrive;
@@ -35,7 +35,7 @@ namespace WindowsInstallerLib
         public string SourceDrive { get; set; } = SourceDrive;
         public int ImageIndex { get; set; } = ImageIndex;
         public string ImageFilePath { get; set; } = ImageFilePath;
-        public bool InstallExtraDrivers { get; set; } = InstallExtraDrivers;
+        public string AdditionalDriversDrive { get; set; } = AdditionalDriversDrive;
         public string FirmwareType { get; set; } = FirmwareType;
     }
 
@@ -284,6 +284,47 @@ namespace WindowsInstallerLib
                 }
             }
             #endregion
+
+            #region AdditionalDriversList
+            if (string.IsNullOrWhiteSpace(parameters.AdditionalDriversDrive))
+            {
+                Console.Write("\n=> Do you want to add additional drivers to your installation?: [Y/N]: ");
+                string? UserWantsExtraDrivers = Console.ReadLine()?.ToLower(CultureInfo.CurrentCulture);
+
+                if (string.IsNullOrEmpty(UserWantsExtraDrivers) ||
+                    string.IsNullOrWhiteSpace(UserWantsExtraDrivers))
+                {
+                    UserWantsExtraDrivers = "no";
+                }
+
+                switch (UserWantsExtraDrivers.ToLower())
+                {
+                    case "no":
+                        return;
+                    case "n":
+                        break;
+                    case "yes":
+                    case "y":
+                        Console.Write("\n==> Specify the directory where the drivers are located. (e.g. X:\\Drivers): ");
+                        string? driversPath = Console.ReadLine();
+                        if (string.IsNullOrEmpty(driversPath) ||
+                            string.IsNullOrWhiteSpace(driversPath))
+                        {
+                            throw new ArgumentException("No drivers path was specified.");
+                        }
+
+                        if (!Directory.Exists(driversPath))
+                        {
+                            throw new FileNotFoundException($"The directory {driversPath} does not exist");
+                        }
+
+                        parameters.AdditionalDriversDrive = driversPath;
+                        break;
+                    default:
+                        return;
+                }
+            }
+            #endregion
         }
 
         /// <summary>
@@ -329,6 +370,15 @@ namespace WindowsInstallerLib
             try
             {
                 DeployManager.ApplyImage(ref parameters);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            try
+            {
+                DeployManager.InstallAdditionalDrivers(ref parameters);
             }
             catch (Exception)
             {
