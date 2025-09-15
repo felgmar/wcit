@@ -42,6 +42,7 @@ ECHO PATCHING INNO SETUP SCRIPT...
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define RepositoryDir -Value %REPOSITORYDIR%}"
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppOutputDir -Value %OUTPUTDIR%}"
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define UserName -Value %USERNAME%}"
+CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppLicense -Value %LICENSE%}"
 
 ECHO COMPILING INSTALLER...
 CALL %COMPILER% %SETUPSCRIPT%
