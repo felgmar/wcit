@@ -5,6 +5,7 @@ CALL %~dp0publish-cleanup.bat
 SET COMPILER="%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" /Q
 FOR /F "tokens=2 delims=\\" %%A IN ('whoami') DO SET USERNAME="%%A"
 SET LICENSE="%~dp0..\LICENSE"
+SET REPOSITORYDIR="%~dp0.."
 SET OUTPUTDIR="%~dp0..\build-installer"
 SET SETUPSCRIPT="%~dp0..\build-installer\wcit-setup.iss"
 SET USERNAME="felgmar"
@@ -38,6 +39,7 @@ IF "%1"=="" IF NOT EXIST %SETUPSCRIPT% (
 )
 
 ECHO PATCHING INNO SETUP SCRIPT...
+CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define RepositoryDir -Value %REPOSITORYDIR%}"
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppOutputDir -Value %OUTPUTDIR%}"
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define UserName -Value %USERNAME%}"
 
