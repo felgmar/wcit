@@ -5,7 +5,8 @@ param(
 )
 
 process {
-    [String]$Uri="https://raw.githubusercontent.com/felgmar/isscripts/refs/heads/main/wcit/wcit-setup.iss"
+    [String]$Uri = "https://raw.githubusercontent.com/felgmar/isscripts/refs/heads/main/wcit/wcit-setup.iss"
+
     try {
         Invoke-WebRequest -Uri $Uri -OutFile "$OutputPath" -UseBasicParsing -WarningAction Ignore -ErrorAction Stop
     }
