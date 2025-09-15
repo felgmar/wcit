@@ -6,12 +6,16 @@ SET COMPILER="%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" /Q
 FOR /F "tokens=2 delims=\\" %%A IN ('whoami') DO SET USERNAME="%%A"
 SET LICENSE="%~dp0..\LICENSE"
 SET OUTPUTDIR="%~dp0..\build-installer"
-SET SETUPSCRIPT="%~dp0wcit-setup.iss"
+SET SETUPSCRIPT="%~dp0..\build-installer\wcit-setup.iss"
 SET USERNAME="felgmar"
 
 IF NOT EXIST %LICENSE% (
     ECHO.ERROR: LICENSE FILE NOT FOUND
     EXIT /B 1
+)
+
+IF NOT EXIST %OUTPUTDIR% (
+    MKDIR %OUTPUTDIR%
 )
 
 IF EXIST %SETUPSCRIPT% (
@@ -23,17 +27,14 @@ IF NOT EXIST %SETUPSCRIPT% (
     CALL icacls.exe "%SETUPSCRIPT%" /grant %USERNAME%:F
 )
 
-IF NOT EXIST %OUTPUTDIR% (
-    MKDIR %OUTPUTDIR%
-)
-
-FOR /F "tokens=* delims=.exe" %%F IN ('DIR /A /B "%OUTPUTDIR%"') DO (
+FOR %%F IN ("%OUTPUTDIR%\*.exe") DO (
     ECHO REMOVING FILE %%F FROM %OUTPUTDIR%...
     DEL /Q "%OUTPUTDIR%\%%F"
 )
 
 IF "%1"=="" IF NOT EXIST %SETUPSCRIPT% (
     ECHO.ERROR: NO INNO SETUP SCRIPT WAS PROVIDED
+    EXIT /B 1
 )
 
 ECHO PATCHING INNO SETUP SCRIPT...
