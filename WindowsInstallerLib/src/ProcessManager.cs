@@ -40,7 +40,6 @@ namespace WindowsInstallerLib
                 process.Start();
                 process.WaitForExit();
                 ExitCode = process.ExitCode;
-
             }
             catch (InvalidOperationException)
             {
@@ -144,6 +143,14 @@ namespace WindowsInstallerLib
             return ExitCode;
         }
 
+        internal static int StartDiskPartProcessThreaded(int DiskNumber, string EfiDrive, string DestinationDrive)
+        {
+            ThreadManager.CreateThread(
+                () => StartDiskPartProcess(DiskNumber, EfiDrive, DestinationDrive)
+            );
+            return ExitCode;
+        }
+
         /// <summary>
         /// Starts a new process to execute the Deployment Image Servicing and Management (DISM) tool with the specified
         /// arguments.
@@ -184,6 +191,15 @@ namespace WindowsInstallerLib
             {
                 process.Close();
             }
+
+            return ExitCode;
+        }
+
+        internal static int StartDismProcessThreaded(string args)
+        {
+            ThreadManager.CreateThread(
+                () => StartDismProcess(args)
+            );
 
             return ExitCode;
         }
@@ -232,6 +248,15 @@ namespace WindowsInstallerLib
             {
                 process.Close();
             }
+
+            return ExitCode;
+        }
+
+        internal static int StartProcessThreaded(string filename, string args)
+        {
+            ThreadManager.CreateThread(
+                () => StartProcess(filename, args)
+            );
 
             return ExitCode;
         }

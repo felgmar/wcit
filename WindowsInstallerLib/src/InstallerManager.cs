@@ -37,6 +37,7 @@ namespace WindowsInstallerLib
         public string ImageFilePath { get; set; } = ImageFilePath;
         public string AdditionalDriversDrive { get; set; } = AdditionalDriversDrive;
         public string FirmwareType { get; set; } = FirmwareType;
+        public bool UseMultiThreading { get; set; } = false;
     }
 
     /// <summary>
@@ -61,6 +62,40 @@ namespace WindowsInstallerLib
         /// <exception cref="InvalidDataException">Thrown if the firmware type cannot be determined or is invalid.</exception>
         public static void Configure(ref Parameters parameters)
         {
+            #region UseMultiThreading
+            Console.WriteLine("\nDo you want to enable multithreading?: ");
+            string? p_UseMultiThreading = Console.ReadLine();
+
+            if (!string.IsNullOrWhiteSpace(p_UseMultiThreading))
+            {
+                try
+                {
+                    parameters.UseMultiThreading = p_UseMultiThreading.ToLowerInvariant() switch
+                    {
+                        "yes" or "y" or "true" => true,
+                        "no" or "n" or "false" => false,
+                        _ => throw new ArgumentException("Invalid input for multithreading option. Please type 'yes' or 'no'.")
+                    };
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+
+            switch (parameters.UseMultiThreading)
+            {
+                case true:
+                    parameters.UseMultiThreading = true;
+                    Console.WriteLine($"\nMultithreading is enabled.", ConsoleColor.Yellow);
+                    break;
+                case false:
+                    parameters.UseMultiThreading = false;
+                    Console.WriteLine($"\nMultithreading is disabled.", ConsoleColor.Yellow);
+                    break;
+            }
+            #endregion
+
             #region DestinationDrive
             if (string.IsNullOrEmpty(parameters.DestinationDrive) ||
                 string.IsNullOrWhiteSpace(parameters.DestinationDrive))
