@@ -16,10 +16,76 @@ namespace WindowsInstallerLib
     internal static class DeployManager
     {
         /// <summary>
-        /// Adds one or more drivers to the specified offline Windows image.
+        /// Installs a driver to the specified offline Windows image.
         /// </summary>
         /// <remarks>This method initializes the DISM API, opens an offline session for the specified
-        /// destination drive, and adds the provided drivers. If <paramref name="DriversSource"/> is an array, all
+        /// destination drive, and adds the provided drivers. If <paramref name="DriverSource"/> is an array, all
+        /// drivers in the array are added recursively. Otherwise, a single driver is added. The DISM API is properly
+        /// shut down after the operation completes, even if an exception occurs.</remarks>
+        /// <param name="parameters">A reference to a <see cref="Parameters"/> object containing details about the image file path and
+        /// destination drive. The <see cref="Parameters.ImageFilePath"/> and <see cref="Parameters.DestinationDrive"/>
+        /// properties must not be null, empty, or whitespace.</param>
+        /// <param name="DriversSource">The source path of the driver or drivers to be added. This can be a single driver file path or an array of
+        /// driver paths. The value must not be null, empty, or whitespace.</param>
+        /// <exception cref="DirectoryNotFoundException">Thrown if the directory specified in <see cref="Parameters.DestinationDrive"/> does not exist.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have administrative privileges required to initialize the DISM API.</exception>
+        internal static void AddDriver(ref Parameters parameters,
+                                       string DriverSource,
+                                       bool ForceUnsigned = false)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath, nameof(parameters.ImageFilePath));
+            ArgumentException.ThrowIfNullOrWhiteSpace(DriverSource, nameof(DriverSource));
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, nameof(parameters.DestinationDrive));
+
+            if (!PrivilegesManager.IsAdmin())
+            {
+                throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
+            }
+
+            if (!Directory.Exists(parameters.DestinationDrive))
+            {
+                throw new DirectoryNotFoundException($"Could not find the directory: {parameters.DestinationDrive}");
+            }
+
+            DismSession? session = null;
+
+            try
+            {
+                DismApi.InitializeEx(DismLogLevel.LogErrorsWarnings);
+            }
+            catch (DismException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            try
+            {
+                session = DismApi.OpenOfflineSession(parameters.DestinationDrive);
+                DismApi.AddDriver(session, DriverSource, ForceUnsigned);
+            }
+            catch (DismRebootRequiredException)
+            {
+                throw;
+            }
+            catch (DismException)
+            {
+                throw;
+            }
+            finally
+            {
+                DismApi.Shutdown();
+            }
+        }
+
+        /// <summary>
+        /// Installs multiple drivers at once to the specified offline Windows image.
+        /// </summary>
+        /// <remarks>This method initializes the DISM API, opens an offline session for the specified
+        /// destination drive, and adds the provided drivers. If <paramref name="DriverSource"/> is an array, all
         /// drivers in the array are added recursively. Otherwise, a single driver is added. The DISM API is properly
         /// shut down after the operation completes, even if an exception occurs.</remarks>
         /// <param name="parameters">A reference to a <see cref="Parameters"/> object containing details about the image file path and
@@ -30,9 +96,9 @@ namespace WindowsInstallerLib
         /// <exception cref="DirectoryNotFoundException">Thrown if the directory specified in <see cref="Parameters.DestinationDrive"/> does not exist.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have administrative privileges required to initialize the DISM API.</exception>
         internal static void AddDrivers(ref Parameters parameters,
-                                        string DriversSource,
-                                        bool ForceUnsigned = false,
-                                        bool Recursive = false)
+                                       string DriversSource,
+                                       bool ForceUnsigned = false,
+                                       bool Recursive = false)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath, nameof(parameters.ImageFilePath));
             ArgumentException.ThrowIfNullOrWhiteSpace(DriversSource, nameof(DriversSource));
@@ -48,19 +114,29 @@ namespace WindowsInstallerLib
                 throw new DirectoryNotFoundException($"Could not find the directory: {parameters.DestinationDrive}");
             }
 
+            DismSession? session = null;
+
             try
             {
-                DismApi.Initialize(DismLogLevel.LogErrorsWarningsInfo);
-                DismSession session = DismApi.OpenOfflineSession(parameters.DestinationDrive);
+                DismApi.InitializeEx(DismLogLevel.LogErrorsWarnings);
+            }
+            catch (DismException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
 
-                if (DriversSource.GetType().IsArray)
-                {
-                    DismApi.AddDriversEx(session, DriversSource, ForceUnsigned, Recursive);
-                }
-                else
-                {
-                    DismApi.AddDriver(session, DriversSource, ForceUnsigned);
-                }
+            try
+            {
+                session = DismApi.OpenOfflineSession(parameters.DestinationDrive);
+                DismApi.AddDriversEx(session, DriversSource, ForceUnsigned, Recursive);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                throw;
             }
             finally
             {
