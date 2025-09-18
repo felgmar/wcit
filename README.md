@@ -21,7 +21,7 @@ If you just want to use the tool, grab the latest release from the **[Releases](
 
 ### Prerequisites  
 - **Windows 10/11**  
-- **.NET SDK** (version X.X or later — replace with your actual target)  
+- **.NET SDK** (version 8.0 or later — replace with your actual target)  
 - **Visual Studio** (Community Edition or higher) with `.NET desktop development` workload  
 - *(Optional)* [Inno Setup](https://jrsoftware.org/isinfo.php) if you want to compile the installer  
 
