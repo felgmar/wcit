@@ -46,7 +46,7 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 ---
 
 ### Example Build Commands  
-> **Note**: These commands must be ran at root directory of the repository.
+> **Note**: These commands must be ran at the root directory of the repository.
 
 - To build and cleanup:
 ```powershell
