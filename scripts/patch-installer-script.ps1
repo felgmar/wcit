@@ -3,7 +3,7 @@ param (
     [Parameter(Mandatory = $true)]
     [string]$OutputPath,
     [Parameter(Mandatory = $true)]
-    [ValidateSet('AppOutputDir', 'UserName', 'AppLicense', 'RepositoryDir')]
+    [ValidateSet('AppOutputDir', 'UserName', 'AppLicense', 'RepositoryDir', 'AppVersion')]
     [String]$Define,
     [Parameter(Mandatory = $true)]
     [String]$Value

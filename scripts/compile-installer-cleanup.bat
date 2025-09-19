@@ -9,6 +9,7 @@ SET REPOSITORYDIR="%~dp0.."
 SET OUTPUTDIR="%~dp0..\build-installer"
 SET SETUPSCRIPT="%~dp0..\build-installer\wcit-setup.iss"
 SET USERNAME="felgmar"
+SET VERSION="1.0.0.0"
 
 IF NOT EXIST %LICENSE% (
     ECHO.ERROR: LICENSE FILE NOT FOUND
@@ -43,6 +44,7 @@ CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-sc
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppOutputDir -Value %OUTPUTDIR%}"
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define UserName -Value %USERNAME%}"
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppLicense -Value %LICENSE%}"
+CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppVersion -Value %VERSION%}"
 
 ECHO COMPILING INSTALLER...
 CALL %COMPILER% %SETUPSCRIPT%
