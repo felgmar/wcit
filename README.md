@@ -36,12 +36,12 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 | `build.bat` | Builds the project in Release mode |
 | `build-clean.bat` | Cleans previous build artifacts, then builds |
 | `publish.bat` | Publishes the project (self-contained build) |
-| `publish-cleanup.bat` | Cleans, then publishes |
-| `compile.bat` | Compiles without publishing |
-| `compile-installer.bat` | Builds and packages an installer using Inno Setup |
+| `publish-cleanup.bat` | Cleans, then publishes the project |
+| `compile-installer.bat` | Compiles without publishing |
+| `compile-installer-cleanup.bat` | Cleans, then compiles without publishing |
 | `cleanup.bat` | Removes build artifacts |
-| `patch-installer-scripts.ps1` | Updates installer scripts before compiling |
-| `installer-scripts.ps1` | Helper script for installer creation |
+| `patch-installer-script.ps1` | Patches the installer script before compiling |
+| `download-installer-script.ps1` | Helper script for downloading the installer script |
 
 ---
 
