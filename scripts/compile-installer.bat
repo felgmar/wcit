@@ -7,7 +7,7 @@ SET REPOSITORYDIR="%~dp0.."
 SET OUTPUTDIR="%~dp0..\build-installer"
 SET SETUPSCRIPT="%~dp0..\build-installer\wcit-setup.iss"
 SET USERNAME="felgmar"
-SET VERSION="1.0.0.0"
+SET VERSION="1.0.1.0"
 
 IF NOT EXIST %LICENSE% (
     ECHO.ERROR: LICENSE FILE NOT FOUND
