@@ -64,6 +64,12 @@ namespace ConsoleApp
                     case "/firmwaretype":
                         parameters.FirmwareType = args[Array.IndexOf(args, arg) + 1].ToUpperInvariant();
                         continue;
+                    default:
+                        if (arg.StartsWith("/", StringComparison.CurrentCulture) || !string.IsNullOrWhiteSpace(arg))
+                        {
+                            throw new ArgumentException($"Unknown argument: {arg}");
+                        }
+                        break;
                 }
             }
 #if DEBUG
