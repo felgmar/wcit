@@ -77,6 +77,7 @@ namespace WindowsInstallerLib
             }
             finally
             {
+                session?.Close();
                 DismApi.Shutdown();
             }
         }
@@ -96,9 +97,9 @@ namespace WindowsInstallerLib
         /// <exception cref="DirectoryNotFoundException">Thrown if the directory specified in <see cref="Parameters.DestinationDrive"/> does not exist.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have administrative privileges required to initialize the DISM API.</exception>
         internal static void AddDrivers(ref Parameters parameters,
-                                       string DriversSource,
-                                       bool ForceUnsigned = false,
-                                       bool Recursive = false)
+                                        string DriversSource,
+                                        bool ForceUnsigned = false,
+                                        bool Recursive = false)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath, nameof(parameters.ImageFilePath));
             ArgumentException.ThrowIfNullOrWhiteSpace(DriversSource, nameof(DriversSource));
@@ -120,9 +121,9 @@ namespace WindowsInstallerLib
             {
                 DismApi.InitializeEx(DismLogLevel.LogErrorsWarnings);
             }
-            catch (DismException)
+            catch (DismException ex)
             {
-                throw;
+                Console.Write($"An error occured: {ex}");
             }
             catch (Exception)
             {
@@ -140,6 +141,7 @@ namespace WindowsInstallerLib
             }
             finally
             {
+                session?.Close();
                 DismApi.Shutdown();
             }
         }
@@ -335,7 +337,7 @@ namespace WindowsInstallerLib
         /// <exception cref="UnauthorizedAccessException"></exception>
         internal static void InstallAdditionalDrivers(ref Parameters parameters)
         {
-            DismSession session;
+            DismSession? session = null;
 
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.AdditionalDriversDrive, nameof(parameters));
 
@@ -355,7 +357,7 @@ namespace WindowsInstallerLib
                         throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
                 }
 
-                session = DismApi.OpenOfflineSession(parameters.DestinationDrive);
+                session ??= DismApi.OpenOfflineSession(parameters.DestinationDrive);
 
             }
             catch (DismException)
@@ -373,7 +375,7 @@ namespace WindowsInstallerLib
             }
             finally
             {
-                session.Close();
+                session?.Close();
                 DismApi.Shutdown();
             }
         }
