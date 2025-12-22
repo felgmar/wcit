@@ -351,14 +351,35 @@ namespace WindowsInstallerLib
                 switch (PrivilegesManager.IsAdmin())
                 {
                     case true:
-                        DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
+                        try
+                        {
+                            DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
+                        }
+                        catch (DismException)
+                        {
+                            throw;
+                        }
+                        catch (Exception)
+                        {
+                            throw;
+                        }
                         break;
                     case false:
                         throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
                 }
 
-                session ??= DismApi.OpenOfflineSession(parameters.DestinationDrive);
-
+                try
+                {
+                    session ??= DismApi.OpenOfflineSession(parameters.DestinationDrive);
+                }
+                catch (DismException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
             catch (DismException)
             {
