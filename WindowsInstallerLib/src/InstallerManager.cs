@@ -91,13 +91,16 @@ namespace WindowsInstallerLib
 
                 ArgumentException.ThrowIfNullOrWhiteSpace(p_DestinationDrive);
 
-                if (p_DestinationDrive.StartsWith(':'))
+                if (p_DestinationDrive.Length != 2 ||
+                    p_DestinationDrive.Length > 2)
                 {
-                    throw new ArgumentException(@$"Invalid source drive {p_DestinationDrive}, it must have a colon at the end not at the beginning. For example: 'Z:'.");
+                    throw new ArgumentException(@$"Invalid source drive {p_DestinationDrive}. Too many characters.");
                 }
-                else if (!p_DestinationDrive.EndsWith(':'))
+
+                if (p_DestinationDrive.StartsWith(':') ||
+                    !p_DestinationDrive.EndsWith(':'))
                 {
-                    throw new ArgumentException($"Invalid source drive {p_DestinationDrive}, it must have a colon. For example: 'Z:'.");
+                    throw new InvalidDataException(@$"Invalid source drive {p_DestinationDrive}. A valid drive is for example: 'Z:'.");
                 }
 
                 parameters.DestinationDrive = p_DestinationDrive;
@@ -299,10 +302,6 @@ namespace WindowsInstallerLib
 
                 switch (UserWantsExtraDrivers.ToLower())
                 {
-                    case "no":
-                        return;
-                    case "n":
-                        break;
                     case "yes":
                     case "y":
                         Console.Write("\n==> Specify the directory where the drivers are located. (e.g. X:\\Drivers): ");
@@ -362,36 +361,36 @@ namespace WindowsInstallerLib
             {
                 DiskManager.FormatDisk(ref parameters);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error occurred while formatting the disk: {ex}", ConsoleColor.Red);
             }
 
             try
             {
                 DeployManager.ApplyImage(ref parameters);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error occurred while applying the image: {ex}", ConsoleColor.Red);
             }
 
             try
             {
                 DeployManager.InstallAdditionalDrivers(ref parameters);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error occurred when installing additional drivers: {ex}", ConsoleColor.Yellow);
             }
 
             try
             {
                 DeployManager.InstallBootloader(ref parameters);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error occurred while installing the bootloader: {ex}", ConsoleColor.Red);
             }
         }
     }
