@@ -30,36 +30,45 @@ namespace ConsoleApp
                 Console.WriteLine($"Created by {ProgramInfo.GetAuthor()}");
 #endif
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error has occurred: {ex.Message}");
             }
 
             try
             {
                 ArgumentParser.ParseArgs(ref parameters, args);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error has occurred: {ex.Message}");
             }
 
             try
             {
                 InstallerManager.Configure(ref parameters);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error has occurred: {ex.Message}");
+            }
+
+            try
+            {
+                InstallerManager.Prepare(ref parameters);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error has occurred: {ex.Message}");
             }
 
             try
             {
                 InstallerManager.InstallWindows(ref parameters);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                Console.WriteLine($"An error has occurred: {ex.Message}");
             }
 
             return 0;

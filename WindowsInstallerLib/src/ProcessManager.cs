@@ -86,20 +86,31 @@ namespace WindowsInstallerLib
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardInput = true;
                 process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.CreateNoWindow = true;
+
                 process.Start();
 
                 Console.WriteLine($"Formatting disk {DiskNumber}, please wait...");
 
                 process.StandardInput.WriteLine($"select disk {DiskNumber}");
                 process.StandardInput.WriteLine("clean");
+                Console.WriteLine($"Cleaning disk {DiskNumber}...");
                 process.StandardInput.WriteLine("convert gpt");
+                Console.WriteLine($"Converting disk {DiskNumber} to GPT");
                 process.StandardInput.WriteLine("create partition efi size=100");
-                process.StandardInput.WriteLine("create partition msr size=16");
+                Console.WriteLine("Creating a 100MB EFI partition...");
                 process.StandardInput.WriteLine("format fs=fat32 quick");
+                Console.WriteLine("Formatting EFI partition with FAT32...");
                 process.StandardInput.WriteLine($"assign letter {EfiDrive}");
+                Console.WriteLine($"Assigning letter {EfiDrive} to EFI partition...");
+                process.StandardInput.WriteLine("create partition msr size=16");
+                Console.WriteLine("Creating MSR partition...");
                 process.StandardInput.WriteLine("create partition primary");
+                Console.WriteLine($"Creating main partition...");
                 process.StandardInput.WriteLine("format fs=ntfs quick");
+                Console.WriteLine($"Formatting main partition with NTFS...");
                 process.StandardInput.WriteLine($"assign letter {DestinationDrive}");
+                Console.WriteLine($"Assigning letter {DestinationDrive} to main partition...");
                 process.StandardInput.WriteLine("exit");
 
                 process.WaitForExit();

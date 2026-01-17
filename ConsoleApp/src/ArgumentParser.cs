@@ -59,7 +59,7 @@ namespace ConsoleApp
                         parameters.ImageFilePath = args[Array.IndexOf(args, arg) + 1].ToLowerInvariant();
                         continue;
                     case "/additionaldriversdrive":
-                        parameters.AdditionalDriversDrive = args[Array.IndexOf(args, arg) + 1].ToLowerInvariant();
+                        parameters.AdditionalDrive = args[Array.IndexOf(args, arg) + 1].ToLowerInvariant();
                         continue;
                     case "/firmwaretype":
                         parameters.FirmwareType = args[Array.IndexOf(args, arg) + 1].ToUpperInvariant();
@@ -80,7 +80,7 @@ namespace ConsoleApp
             Console.WriteLine($"  Source Drive: {parameters.SourceDrive}");
             Console.WriteLine($"  Image Index: {parameters.ImageIndex}");
             Console.WriteLine($"  Image File Path: {parameters.ImageFilePath}");
-            Console.WriteLine($"  Additional Drivers Drive: {parameters.AdditionalDriversDrive}");
+            Console.WriteLine($"  Additional Drivers Drive: {parameters.AdditionalDrive}");
             Console.WriteLine($"  Firmware Type: {parameters.FirmwareType}");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
