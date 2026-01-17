@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.Versioning;
@@ -17,7 +18,7 @@ namespace WindowsInstallerLib
     /// <param name="SourceDrive">Gets or sets the source drive containing the data to be imaged.</param>
     /// <param name="ImageIndex">Gets or sets the index of the image within the image file to be applied.</param>
     /// <param name="ImageFilePath">Gets or sets the file path of the image file to be used in the operation.</param>
-    /// <param name="AdditionalDriversDrive">Gets or sets a value indicating whether additional drivers should be installed during the imaging process.</param>
+    /// <param name="AdditionalDrive">Gets or sets a value indicating whether additional drivers should be installed during the imaging process.</param>
     /// <param name="FirmwareType">Gets or sets the firmware type of the system being imaged.</param>
     [SupportedOSPlatform("windows")]
     public struct Parameters(string DestinationDrive,
@@ -26,7 +27,7 @@ namespace WindowsInstallerLib
                              string SourceDrive,
                              int ImageIndex,
                              string ImageFilePath,
-                             string AdditionalDriversDrive,
+                             string AdditionalDrive,
                              string FirmwareType)
     {
         public string DestinationDrive { get; set; } = DestinationDrive;
@@ -35,7 +36,7 @@ namespace WindowsInstallerLib
         public string SourceDrive { get; set; } = SourceDrive;
         public int ImageIndex { get; set; } = ImageIndex;
         public string ImageFilePath { get; set; } = ImageFilePath;
-        public string AdditionalDriversDrive { get; set; } = AdditionalDriversDrive;
+        public string AdditionalDrive { get; set; } = AdditionalDrive;
         public string FirmwareType { get; set; } = FirmwareType;
     }
 
@@ -62,15 +63,14 @@ namespace WindowsInstallerLib
         public static void Configure(ref Parameters parameters)
         {
             #region DestinationDrive
-            if (string.IsNullOrEmpty(parameters.DestinationDrive) ||
-                string.IsNullOrWhiteSpace(parameters.DestinationDrive))
+            if (string.IsNullOrWhiteSpace(parameters.DestinationDrive))
             {
-                string p_DestinationDrive;
-
                 Console.Write("\n==> Type the mountpoint to use for deploying Windows (e.g. Z:): ");
+
                 try
                 {
-                    p_DestinationDrive = Console.ReadLine() ?? throw new ArgumentNullException(nameof(parameters), "DestinationDrive is null!");
+                    parameters.DestinationDrive = Console.ReadLine() ??
+                        throw new ArgumentException("A valid destination drive is required.", nameof(parameters));
                 }
                 catch (IOException)
                 {
@@ -89,35 +89,28 @@ namespace WindowsInstallerLib
                     throw;
                 }
 
-                ArgumentException.ThrowIfNullOrWhiteSpace(p_DestinationDrive);
-
-                if (p_DestinationDrive.Length != 2 ||
-                    p_DestinationDrive.Length > 2)
+                if (parameters.DestinationDrive.Length > 2 ||
+                    parameters.DestinationDrive.Length < 2)
                 {
-                    throw new ArgumentException(@$"Invalid source drive {p_DestinationDrive}. Too many characters.");
+                    throw new ArgumentException($"Invalid destination drive {parameters.DestinationDrive}.");
                 }
 
-                if (p_DestinationDrive.StartsWith(':') ||
-                    !p_DestinationDrive.EndsWith(':'))
+                if (parameters.DestinationDrive.StartsWith(':') || !parameters.DestinationDrive.EndsWith(':'))
                 {
-                    throw new InvalidDataException(@$"Invalid source drive {p_DestinationDrive}. A valid drive is for example: 'Z:'.");
+                    throw new InvalidDataException($"Invalid source drive {parameters.DestinationDrive}.");
                 }
-
-                parameters.DestinationDrive = p_DestinationDrive;
             }
             #endregion
 
             #region EfiDrive
-            if (string.IsNullOrEmpty(parameters.EfiDrive) ||
-                string.IsNullOrWhiteSpace(parameters.EfiDrive))
+            if (string.IsNullOrWhiteSpace(parameters.EfiDrive))
             {
-                string p_EfiDrive;
-
                 Console.Write("\n==> Type the mountpoint to use for the bootloader (e.g. Y:): ");
 
                 try
                 {
-                    p_EfiDrive = Console.ReadLine() ?? throw new ArgumentNullException(nameof(parameters), "EfiDrive is null!"); ;
+                    parameters.EfiDrive = Console.ReadLine() ??
+                        throw new ArgumentException("A valid EFI drive is required.", nameof(parameters));
                 }
                 catch (IOException)
                 {
@@ -136,32 +129,31 @@ namespace WindowsInstallerLib
                     throw;
                 }
 
-                ArgumentException.ThrowIfNullOrWhiteSpace(p_EfiDrive);
-
-                if (p_EfiDrive.StartsWith(':'))
+                if (parameters.EfiDrive.StartsWith(':'))
                 {
-                    throw new ArgumentException(@$"Invalid EFI drive {p_EfiDrive}, it must have a colon at the end not at the beginning. For example: 'Y:'.");
-                }
-                else if (!p_EfiDrive.EndsWith(':'))
-                {
-                    throw new ArgumentException($"Invalid EFI drive {p_EfiDrive}, it must have a colon. For example: 'Y:'.");
+                    throw new ArgumentException(@$"Invalid EFI drive {parameters.EfiDrive}, it must have a colon at the end not at the beginning. For example: 'Y:'.");
                 }
 
-                parameters.EfiDrive = p_EfiDrive;
+                if (!parameters.EfiDrive.EndsWith(':'))
+                {
+                    throw new ArgumentException($"Invalid EFI drive {parameters.EfiDrive}, it must have a colon. For example: 'Y:'.");
+                }
             }
             #endregion
 
             #region DiskNumber
-            if (string.IsNullOrEmpty(parameters.DiskNumber.ToString()) ||
-                string.IsNullOrWhiteSpace(parameters.DiskNumber.ToString()) ||
-                parameters.DiskNumber == -1)
+            if (string.IsNullOrWhiteSpace(parameters.DiskNumber.ToString()) || parameters.DiskNumber == -1)
             {
-                int p_DiskNumber;
+                Console.WriteLine("\n==> These are the disks available on your system:");
 
                 try
                 {
-                    Console.WriteLine("\n==> These are the disks available on your system:");
-                    DiskManager.ListAll();
+                    SortedDictionary<int, string> Disks = DiskManager.GetDisks();
+
+                    foreach (KeyValuePair<int, string> Disk in Disks)
+                    {
+                        Console.WriteLine("Disk number: {0}\nDisk model: {1}\n", Disk.Key, Disk.Value);
+                    }
                 }
                 catch (Exception)
                 {
@@ -171,7 +163,7 @@ namespace WindowsInstallerLib
                 Console.Write("\n==> Please type the disk number to format (e.g. 0): ");
                 try
                 {
-                    p_DiskNumber = Convert.ToInt32(Console.ReadLine(), CultureInfo.CurrentCulture);
+                    parameters.DiskNumber = Convert.ToInt32(Console.ReadLine(), CultureInfo.CurrentCulture);
                 }
                 catch (FormatException)
                 {
@@ -189,21 +181,18 @@ namespace WindowsInstallerLib
                 {
                     throw;
                 }
-
-                parameters.DiskNumber = p_DiskNumber;
             }
             #endregion
 
             #region SourceDrive
-            if (string.IsNullOrEmpty(parameters.SourceDrive) ||
-                string.IsNullOrWhiteSpace(parameters.SourceDrive))
+            if (string.IsNullOrWhiteSpace(parameters.SourceDrive))
             {
-                string? p_SourceDrive;
+                Console.Write("\n==> Specify the mount point where the source are mounted at (e.g. X:): ");
 
-                Console.Write("\n==> Specify the mountpount where the source are mounted at (e.g. X:): ");
                 try
                 {
-                    p_SourceDrive = Console.ReadLine();
+                    parameters.SourceDrive = Console.ReadLine() ??
+                        throw new ArgumentException("A sourced drive is required.", nameof(parameters));
                 }
                 catch (IOException)
                 {
@@ -222,74 +211,49 @@ namespace WindowsInstallerLib
                     throw;
                 }
 
-                ArgumentException.ThrowIfNullOrWhiteSpace(p_SourceDrive);
+                ArgumentException.ThrowIfNullOrWhiteSpace(parameters.SourceDrive);
 
-                if (p_SourceDrive.StartsWith(':'))
+                if (parameters.SourceDrive.StartsWith(':'))
                 {
-                    throw new ArgumentException(@$"Invalid source drive {p_SourceDrive}, it must have a colon at the end not at the beginning. For example: 'H:'.");
+                    throw new ArgumentException(@$"Invalid source drive {parameters.SourceDrive}, it must have a colon at the end not at the beginning. For example: 'H:'.");
                 }
-                else if (!p_SourceDrive.EndsWith(':'))
+                else if (!parameters.SourceDrive.EndsWith(':'))
                 {
-                    throw new ArgumentException($"Invalid source drive {p_SourceDrive}, it must have a colon. For example: 'H:'.");
+                    throw new ArgumentException($"Invalid source drive {parameters.SourceDrive}, it must have a colon. For example: 'H:'.");
                 }
-
-                parameters.SourceDrive = p_SourceDrive;
             }
             #endregion
 
             #region ImageFilePath
-            if (string.IsNullOrEmpty(parameters.ImageFilePath) ||
-                string.IsNullOrWhiteSpace(parameters.ImageFilePath))
+            if (string.IsNullOrWhiteSpace(parameters.ImageFilePath))
             {
-                string p_ImageFilePath = DeployManager.GetImageFile(ref parameters);
+                parameters.ImageFilePath = DeployManager.GetImageFile(ref parameters);
 
-                Console.WriteLine($"\nImage file path has been set to {p_ImageFilePath}.");
-
-                parameters.ImageFilePath = p_ImageFilePath;
+                Console.WriteLine($"\nImage file path has been set to {parameters.ImageFilePath}.");
             }
             #endregion
 
             #region ImageIndex
-            if (string.IsNullOrEmpty(parameters.ImageIndex.ToString()) ||
-                string.IsNullOrWhiteSpace(parameters.ImageIndex.ToString()) ||
-                parameters.ImageIndex == -1)
+            if (parameters.ImageIndex == -1)
             {
                 DeployManager.GetImageInfo(ref parameters);
 
                 Console.Write("\n==> Type the index number of the Windows edition you wish to install (e.g. 1): ");
-                string? SelectedIndex = Console.ReadLine();
-
-                if (string.IsNullOrEmpty(SelectedIndex) || string.IsNullOrWhiteSpace(SelectedIndex))
-                {
-                    throw new ArgumentException("No Windows edition was specified.");
-                }
-
-                parameters.ImageIndex = Convert.ToInt32(SelectedIndex, CultureInfo.CurrentCulture);
+                parameters.ImageIndex = Convert.ToInt32(Console.ReadLine() ??
+                    throw new ArgumentException("No Windows edition was specified."), CultureInfo.CurrentCulture);
             }
             #endregion
 
             #region FirmwareType
-            if (string.IsNullOrEmpty(parameters.FirmwareType) ||
-                string.IsNullOrWhiteSpace(parameters.FirmwareType))
+            if (string.IsNullOrWhiteSpace(parameters.FirmwareType))
             {
-                switch (SystemInfoManager.IsEFI())
-                {
-                    case true:
-                        parameters.FirmwareType = "UEFI";
-                        Console.WriteLine($"\nThe installer has set the firmware type to {parameters.FirmwareType}.", ConsoleColor.Yellow);
-                        break;
-                    case false:
-                        parameters.FirmwareType = "BIOS";
-                        Console.WriteLine($"\nThe installer has set the firmware type to {parameters.FirmwareType}.", ConsoleColor.Yellow);
-                        break;
-                    default:
-                        throw new InvalidDataException($"Invalid firmware type: {parameters.FirmwareType}");
-                }
+                parameters.FirmwareType = SystemInfoManager.IsEFI() ? "UEFI" : "BIOS";
+                Console.WriteLine($"\nThe installer has set the firmware type to {parameters.FirmwareType}.", ConsoleColor.Yellow);
             }
             #endregion
 
-            #region AdditionalDriversList
-            if (string.IsNullOrWhiteSpace(parameters.AdditionalDriversDrive))
+            #region AdditionalDrive
+            if (string.IsNullOrWhiteSpace(parameters.AdditionalDrive))
             {
                 Console.Write("\n=> Do you want to add additional drivers to your installation?: [Y/N]: ");
                 string? UserWantsExtraDrivers = Console.ReadLine()?.ToLower(CultureInfo.CurrentCulture);
@@ -317,7 +281,7 @@ namespace WindowsInstallerLib
                             throw new FileNotFoundException($"The directory {driversPath} does not exist");
                         }
 
-                        parameters.AdditionalDriversDrive = driversPath;
+                        parameters.AdditionalDrive = driversPath;
                         break;
                     default:
                         return;
@@ -340,7 +304,7 @@ namespace WindowsInstallerLib
         /// <exception cref="InvalidDataException">Thrown if the <paramref name="parameters"/> object contains invalid or missing values, such as: - Disk
         /// number is -1. - EFI drive is null, empty, or whitespace.</exception>
         [SupportedOSPlatform("windows")]
-        public static void InstallWindows(ref Parameters parameters)
+        public static void Prepare(ref Parameters parameters)
         {
             if (parameters.DiskNumber.Equals(-1))
             {
@@ -352,10 +316,11 @@ namespace WindowsInstallerLib
                 throw new InvalidDataException("No EFI drive was specified, required for the bootloader installation.");
             }
 
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive);
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, parameters.DestinationDrive);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.EfiDrive, parameters.EfiDrive);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath, parameters.ImageFilePath);
             ArgumentOutOfRangeException.ThrowIfEqual(parameters.ImageIndex, -1);
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType, parameters.FirmwareType);
 
             try
             {
@@ -365,32 +330,35 @@ namespace WindowsInstallerLib
             {
                 Console.WriteLine($"An error occurred while formatting the disk: {ex}", ConsoleColor.Red);
             }
+        }
 
+        public static void InstallWindows(ref Parameters parameters)
+        {
             try
             {
                 DeployManager.ApplyImage(ref parameters);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"An error occurred while applying the image: {ex}", ConsoleColor.Red);
+                throw;
             }
 
             try
             {
                 DeployManager.InstallAdditionalDrivers(ref parameters);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"An error occurred when installing additional drivers: {ex}", ConsoleColor.Yellow);
+                throw;
             }
 
             try
             {
                 DeployManager.InstallBootloader(ref parameters);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"An error occurred while installing the bootloader: {ex}", ConsoleColor.Red);
+                throw;
             }
         }
     }

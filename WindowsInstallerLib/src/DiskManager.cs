@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -51,50 +53,32 @@ namespace WindowsInstallerLib
         /// model, and device ID for each disk drive found. <para> Note that this method is intended for internal use
         /// and writes directly to the console. It does not return the retrieved data or provide a way to
         /// programmatically access it. </para></remarks>
-        internal static void ListAll()
+        internal static SortedDictionary<int, string> GetDisks()
         {
+            SortedDictionary<int, string> SystemDisks = [];
+
             try
             {
-                WqlObjectQuery DeviceTable = new("SELECT * FROM Win32_DiskDrive");
-                ManagementObjectSearcher DeviceInfo = new(DeviceTable);
-                foreach (ManagementObject o in DeviceInfo.Get().Cast<ManagementObject>())
+                WqlObjectQuery Query = new("SELECT * FROM Win32_DiskDrive");
+                ManagementObjectSearcher ObjectSearcher = new(Query);
+                foreach (ManagementObject obj in ObjectSearcher.Get().Cast<ManagementObject>())
                 {
-                    Console.WriteLine("Disk number = " + o["Index"]);
-                    Console.WriteLine("Model = " + o["Model"]);
-                    Console.WriteLine("DeviceID = " + o["DeviceID"]);
-                    Console.WriteLine("");
+                    int Index = Convert.ToInt32(obj["Index"], CultureInfo.CurrentCulture);
+                    string? Model = obj["Model"].ToString();
+
+                    if (Model != null)
+                    {
+                        SystemDisks.Add(Index, Model);
+                    }
                 }
+
             }
             catch (Exception)
             {
                 throw;
             }
-        }
 
-        /// <summary>
-        /// Retrieves an array of all available drive information on the system.
-        /// </summary>
-        /// <returns>An array of <see cref="DriveInfo"/> objects representing the drives available on the system.</returns>
-        internal static DriveInfo[] GetDisksT()
-        {
-            try
-            {
-                DriveInfo[] drives = DriveInfo.GetDrives();
-
-                return drives;
-            }
-            catch (IOException)
-            {
-                throw;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            return SystemDisks;
         }
     }
 }
