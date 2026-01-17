@@ -1,19 +1,26 @@
-@ECHO off
+@ECHO OFF
 
-IF EXIST "BUILD" (
-    DEL /S /Q "BUILD"
-)
-IF EXIST "CONSOLEAPP\BIN" (
-    DEL /S /Q "CONSOLEAPP\BIN"
-)
+CALL :REMOVEDIR %~dp0..\.vs
+CALL :REMOVEDIR %~dp0..\build
+CALL :REMOVEDIR %~dp0..\build-installer
+CALL :REMOVEDIR %~dp0..\ConsoleApp\bin
+CALL :REMOVEDIR %~dp0..\ConsoleApp\obj
+CALL :REMOVEDIR %~dp0..\WindowsInstallerLib\bin
+CALL :REMOVEDIR %~dp0..\WindowsInstallerLib\obj
 
-IF EXIST "CONSOLEAPP\OBJ" (
-    DEL /S /Q "CONSOLEAPP\OBJ"
-)
-
+:EXITWITHERROR
 IF %ERRORLEVEL%==0 (
-    EXIT
+    EXIT /B
 ) ELSE (
-    ECHO.PROGRAM EXITED WITH CODE %ERRORLEVEL%
+    ECHO PROGRAM EXITED WITH CODE %ERRORLEVEL%
     EXIT /B %ERRORLEVEL%
 )
+
+:REMOVEDIR
+    IF EXIST %* (
+        ECHO REMOVING DIRECTORY: %*...
+        RMDIR /S /Q %*
+        CALL :EXITWITHERROR
+    ) ELSE (
+        ECHO [!] DIRECTORY NOT FOUND: %*
+    )

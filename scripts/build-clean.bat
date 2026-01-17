@@ -1,5 +1,5 @@
 @ECHO off
 
-START "WCIT CLEANUP SCRIPT" /B scripts/cleanup.bat
+CALL %~dp0/cleanup.bat
 
-dotnet build "Windows Installer.sln" --nologo --self-contained --property:OutputPath=..\build\ --configuration "Debug"
+dotnet build "Windows Installer.sln" --nologo --self-contained --property:OutputPath=%~dp0..\build\ --configuration "Debug"

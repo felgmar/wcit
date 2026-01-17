@@ -58,12 +58,18 @@ namespace ConsoleApp
                     case "/imagefilepath":
                         parameters.ImageFilePath = args[Array.IndexOf(args, arg) + 1].ToLowerInvariant();
                         continue;
-                    case "/installextradrivers":
-                        parameters.InstallExtraDrivers = true;
+                    case "/additionaldriversdrive":
+                        parameters.AdditionalDriversDrive = args[Array.IndexOf(args, arg) + 1].ToLowerInvariant();
                         continue;
                     case "/firmwaretype":
                         parameters.FirmwareType = args[Array.IndexOf(args, arg) + 1].ToUpperInvariant();
                         continue;
+                    default:
+                        if (arg.StartsWith("/", StringComparison.CurrentCulture) || !string.IsNullOrWhiteSpace(arg))
+                        {
+                            throw new ArgumentException($"Unknown argument: {arg}");
+                        }
+                        break;
                 }
             }
 #if DEBUG
@@ -74,7 +80,7 @@ namespace ConsoleApp
             Console.WriteLine($"  Source Drive: {parameters.SourceDrive}");
             Console.WriteLine($"  Image Index: {parameters.ImageIndex}");
             Console.WriteLine($"  Image File Path: {parameters.ImageFilePath}");
-            Console.WriteLine($"  Install Extra Drivers: {parameters.InstallExtraDrivers}");
+            Console.WriteLine($"  Additional Drivers Drive: {parameters.AdditionalDriversDrive}");
             Console.WriteLine($"  Firmware Type: {parameters.FirmwareType}");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
