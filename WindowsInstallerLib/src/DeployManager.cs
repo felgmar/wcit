@@ -392,49 +392,35 @@ namespace WindowsInstallerLib
         /// <exception cref="UnauthorizedAccessException"></exception>
         internal static void InstallAdditionalDrivers(ref Parameters parameters)
         {
+            bool IS_ADMIN = PrivilegesManager.IsAdmin();
+
             DismSession? session = null;
 
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.AdditionalDriversDrive, nameof(parameters));
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.AdditionalDrive, nameof(parameters));
 
-            if (!PrivilegesManager.IsAdmin())
+            switch (IS_ADMIN)
             {
-                throw new UnauthorizedAccessException("You do not have enough privileges to install additional drivers.");
+                case true:
+                    try
+                    {
+                        DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
+                    }
+                    catch (DismException)
+                    {
+                        throw;
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                    break;
+                case false:
+                    throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
             }
 
             try
             {
-                switch (PrivilegesManager.IsAdmin())
-                {
-                    case true:
-                        try
-                        {
-                            DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
-                        }
-                        catch (DismException)
-                        {
-                            throw;
-                        }
-                        catch (Exception)
-                        {
-                            throw;
-                        }
-                        break;
-                    case false:
-                        throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
-                }
-
-                try
-                {
-                    session ??= DismApi.OpenOfflineSession(parameters.DestinationDrive);
-                }
-                catch (DismException)
-                {
-                    throw;
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                session ??= DismApi.OpenOfflineSession(parameters.DestinationDrive);
             }
             catch (DismException)
             {
@@ -447,7 +433,7 @@ namespace WindowsInstallerLib
 
             try
             {
-                DismApi.AddDriversEx(session, parameters.AdditionalDriversDrive, false, true);
+                DismApi.AddDriversEx(session, parameters.AdditionalDrive, false, true);
             }
             finally
             {
@@ -471,9 +457,11 @@ namespace WindowsInstallerLib
         /// <exception cref="UnauthorizedAccessException">Thrown if the current process does not have administrative privileges required to perform the installation.</exception>
         internal static int InstallBootloader(ref Parameters parameters)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, nameof(parameters.DestinationDrive));
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.EfiDrive, nameof(parameters.EfiDrive));
-            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType, nameof(parameters.FirmwareType));
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.DestinationDrive, nameof(parameters));
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.EfiDrive, nameof(parameters));
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType, nameof(parameters));
+
+            bool IS_ADMIN = PrivilegesManager.IsAdmin();
 
             string EFI_BOOT_PATH = Path.Join(parameters.EfiDrive, @"\EFI\Boot");
             string EFI_MICROSOFT_PATH = Path.Join(parameters.EfiDrive, @"\EFI\Microsoft");
@@ -483,7 +471,7 @@ namespace WindowsInstallerLib
             bool EFI_MICROSOFT_EXISTS = Directory.Exists(EFI_MICROSOFT_PATH);
             bool WINDIR_EXISTS = Directory.Exists(WINDIR_PATH);
 
-            if (!PrivilegesManager.IsAdmin())
+            if (IS_ADMIN)
             {
                 throw new UnauthorizedAccessException($"You do not have enough privileges to install the bootloader to {parameters.EfiDrive}");
             }
@@ -500,9 +488,8 @@ namespace WindowsInstallerLib
                     throw new DirectoryNotFoundException(@$"The directory {WINDIR_PATH} does not exist!");
                 }
 
-                Console.WriteLine($"Firmware type is set to: {parameters.FirmwareType}");
                 Console.WriteLine($"\n==> Installing bootloader to drive {parameters.EfiDrive} in disk {parameters.DiskNumber}");
-                ProcessManager.StartCmdProcess("bcdboot", @$"{WINDIR_PATH} /s {parameters.EfiDrive} /f {parameters.FirmwareType}");
+                ProcessManager.StartCmdProcess("bcdboot.exe", @$"{WINDIR_PATH} /s {parameters.EfiDrive} /f {parameters.FirmwareType}");
             }
             catch (IOException)
             {
@@ -512,7 +499,6 @@ namespace WindowsInstallerLib
             {
                 throw;
             }
-
             return ProcessManager.ExitCode;
         }
     }
