@@ -471,7 +471,7 @@ namespace WindowsInstallerLib
             bool EFI_MICROSOFT_EXISTS = Directory.Exists(EFI_MICROSOFT_PATH);
             bool WINDIR_EXISTS = Directory.Exists(WINDIR_PATH);
 
-            if (IS_ADMIN)
+            if (!IS_ADMIN)
             {
                 throw new UnauthorizedAccessException($"You do not have enough privileges to install the bootloader to {parameters.EfiDrive}");
             }
