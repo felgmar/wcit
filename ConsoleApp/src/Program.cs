@@ -37,7 +37,7 @@ namespace ConsoleApp
 
             try
             {
-                ArgumentParser.ParseArgs(ref parameters, args);
+                ArgumentParser.ParseArgs(parameters, args);
             }
             catch (Exception ex)
             {
