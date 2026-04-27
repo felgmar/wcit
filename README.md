@@ -54,5 +54,5 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 ```
 - To compile the installer:
 ```powershell
-.\scripts\publish-cleanup.bat
+.\scripts\compile-installer-cleanup.bat
 ```
