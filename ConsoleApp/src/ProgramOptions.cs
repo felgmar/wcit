@@ -12,49 +12,49 @@ namespace ConsoleApp
             "destination-drive",
             Required = false,
             HelpText = "Specifies the mountpoint to use for deploying Windows.")]
-        public string? DestinationDrive { get; set; }
+        internal string? DestinationDrive { get; set; }
 
         [Option(
             'e',
             "efi-drive",
             Required = false,
             HelpText = "Specifies the mountpoint to use for the EFI partition.")]
-        public string? EfiDrive { get; set; }
+        internal string? EfiDrive { get; set; }
 
         [Option(
             'n',
             "disk-number",
             Required = false,
             HelpText = "Specifies the disk number to use for deploying Windows.")]
-        public int? DiskNumber { get; set; }
+        internal int? DiskNumber { get; set; }
 
         [Option(
             's',
             "source-drive",
             Required = false,
             HelpText = "Specifies the mountpoint to use for the Windows image.")]
-        public string? SourceDrive { get; set; }
+        internal string? SourceDrive { get; set; }
 
         [Option(
             'i',
             "image-index",
             Required = false,
             HelpText = "Specifies the index of the Windows image to deploy.")]
-        public int? ImageIndex { get; set; }
+        internal int? ImageIndex { get; set; }
 
         [Option(
             'p',
             "image-file-path",
             Required = false,
             HelpText = "Specifies the path to the Windows image to deploy.")]
-        public string? ImageFilePath { get; set; }
+        internal string? ImageFilePath { get; set; }
 
         [Option(
             'a',
             "additional-drivers-drive",
             Required = false,
             HelpText = "Specifies the mountpoint to use for additional drivers.")]
-        public string? AdditionalDrive { get; set; }
+        internal string? AdditionalDrive { get; set; }
 
         [Option(
             'f',
@@ -62,7 +62,7 @@ namespace ConsoleApp
             Required = false,
             HelpText = "Specifies the firmware type to use for the deployment (UEFI or BIOS).")]
 
-        public string? FirmwareType { get; set; }
+        internal string? FirmwareType { get; set; }
 
         internal static void PrintHelp()
         {
