@@ -142,7 +142,7 @@ namespace WindowsInstallerLib
             #endregion
 
             #region DiskNumber
-            if (string.IsNullOrWhiteSpace(parameters.DiskNumber.ToString()) || parameters.DiskNumber == -1)
+            if (string.IsNullOrWhiteSpace(parameters.DiskNumber.ToString(CultureInfo.InvariantCulture)) || parameters.DiskNumber == -1)
             {
                 Console.WriteLine("\n==> These are the disks available on your system:");
 
@@ -264,7 +264,7 @@ namespace WindowsInstallerLib
                     UserWantsExtraDrivers = "no";
                 }
 
-                switch (UserWantsExtraDrivers.ToLower())
+                switch (UserWantsExtraDrivers.ToLower(CultureInfo.CurrentCulture))
                 {
                     case "yes":
                     case "y":
