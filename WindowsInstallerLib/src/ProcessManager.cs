@@ -31,16 +31,15 @@ namespace WindowsInstallerLib
         /// <returns>The exit code of the process after it has completed execution.</returns>
         internal static int StartCmdProcess(string fileName, string args)
         {
+            Process process = new();
+
             try
             {
-                Process process = new();
                 process.StartInfo.FileName = fileName;
                 process.StartInfo.Arguments = args;
                 process.StartInfo.UseShellExecute = false;
                 process.Start();
                 process.WaitForExit();
-                ExitCode = process.ExitCode;
-
             }
             catch (InvalidOperationException)
             {
@@ -53,6 +52,11 @@ namespace WindowsInstallerLib
             catch (Exception)
             {
                 throw;
+            }
+            finally
+            {
+                process.Dispose();
+                ExitCode = process.ExitCode;
             }
 
             return ExitCode;
