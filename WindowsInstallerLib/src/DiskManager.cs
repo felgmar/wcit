@@ -65,7 +65,7 @@ namespace WindowsInstallerLib
                     int Index = Convert.ToInt32(obj["Index"], CultureInfo.CurrentCulture);
                     string? Model = obj["Model"].ToString();
 
-                    if (Model != null)
+                    if (!string.IsNullOrWhiteSpace(Model))
                     {
                         SystemDisks.Add(Index, Model);
                     }
