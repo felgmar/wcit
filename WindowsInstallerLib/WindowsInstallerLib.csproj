@@ -5,12 +5,14 @@
         <Nullable>enable</Nullable>
         <PlatformTarget>x64</PlatformTarget>
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-        <ErrorReport>none</ErrorReport>
         <Title>$(AssemblyName)</Title>
         <LangVersion>latest</LangVersion>
-        <Version>1.1.5.1</Version>
+        <Version>1.1.5.2</Version>
         <Platforms>x64</Platforms>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -18,12 +20,15 @@
         <WarningLevel>9999</WarningLevel>
         <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
         <VersionSuffix>-testing</VersionSuffix>
+        <DebugType>embedded</DebugType>
+        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <IsTrimmable>True</IsTrimmable>
-        <WarningLevel>9999</WarningLevel>
+        <WarningLevel>1</WarningLevel>
         <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+        <DebugType>none</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
