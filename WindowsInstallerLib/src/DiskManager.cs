@@ -14,7 +14,7 @@ namespace WindowsInstallerLib
     /// disk information. It requires administrative privileges for certain operations, such as formatting a
     /// disk.</remarks>
     [SupportedOSPlatform("windows")]
-    internal class DiskManager
+    internal sealed class DiskManager
     {
         /// <summary>
         /// Formats the disk with the specified parameters.
