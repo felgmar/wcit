@@ -1,4 +1,6 @@
-@ECHO off
+@ECHO OFF
+
+SET SETUPSCRIPT="%~dp0..\build-installer\wcit-setup.iss"
 
 CALL %~dp0publish-cleanup.bat
 
