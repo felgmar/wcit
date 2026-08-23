@@ -16,25 +16,17 @@ namespace ConsoleApp
                 ImageIndex = -1,
             };
 
-            try
-            {
 #if DEBUG
-                Console.Title = $"[{ProgramInfo.GetConfigurationMode()}] {ProgramInfo.GetName()}";
-                Console.WriteLine($"Welcome to the {ProgramInfo.GetName()} tool!");
-                Console.WriteLine($"Current version: {ProgramInfo.GetVersion()}-{ProgramInfo.GetConfigurationMode()}");
-                Console.WriteLine($"Created by {ProgramInfo.GetAuthor()}");
+            Console.Title = $"[{ProgramInfo.GetConfigurationMode()}] {ProgramInfo.GetName()}";
+            Console.WriteLine($"Welcome to the {ProgramInfo.GetName()} tool!");
+            Console.WriteLine($"Current version: {ProgramInfo.GetVersion()}-{ProgramInfo.GetConfigurationMode()}");
+            Console.WriteLine($"Created by {ProgramInfo.GetAuthor()}");
 #else
-                Console.Title = $"{ProgramInfo.GetName()}";
-                Console.WriteLine($"Welcome to the {ProgramInfo.GetName()} tool!");
-                Console.WriteLine($"Current version: {ProgramInfo.GetVersion()}");
-                Console.WriteLine($"Created by {ProgramInfo.GetAuthor()}");
+            Console.Title = $"{ProgramInfo.GetName()}";
+            Console.WriteLine($"Welcome to the {ProgramInfo.GetName()} tool!");
+            Console.WriteLine($"Current version: {ProgramInfo.GetVersion()}");
+            Console.WriteLine($"Created by {ProgramInfo.GetAuthor()}");
 #endif
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error has occurred: {ex.Message}");
-            }
-
             try
             {
                 ArgumentParser.ParseArgs(parameters, args);
