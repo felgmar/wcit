@@ -46,7 +46,7 @@ namespace WindowsInstallerLib
             }
         }
 
-        internal static List<Tuple<int, string, string>> GetDisks()
+        internal static List<Tuple<int, string, string>> GetDisksWithLetters()
         {
             List<Tuple<int, string, string>> DisksList = [];
             try

@@ -13,7 +13,7 @@ namespace WindowsInstallerLib
 
         public class Devices
         {
-            public static List<Tuple<int, string, string>> GetDisks() { return DiskManager.GetDisks(); }
+            public static List<Tuple<int, string, string>> GetDisks() { return DiskManager.GetDisksWithLetters(); }
         }
 
         public class SystemInfo
