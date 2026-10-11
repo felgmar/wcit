@@ -21,8 +21,8 @@ If you just want to use the tool, grab the latest release from the **[Releases](
 
 ### Prerequisites  
 - **Windows 10/11**  
-- **.NET SDK** (version 8.0 or later — replace with your actual target)  
-- **Visual Studio** (Community Edition or higher) with `.NET desktop development` workload  
+- **.NET SDK 10.0**
+- **Visual Studio** (Community Edition or higher) with the `.NET desktop development` and `WinUI application development` workloads to build the graphical app
 - *(Optional)* [Inno Setup](https://jrsoftware.org/isinfo.php) if you want to compile the installer  
 
 ---
@@ -45,7 +45,17 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 
 ---
 
-### Example Build Commands  
+### WinUI preview
+
+The `WindowsInstallerUI` project is an early WinUI 3 front end with a fixed 1024x768 window and system, light, and dark themes under the Appearance menu. It can mount a Windows ISO or search an already-mounted drive recursively for `install.wim` and `install.esd` files, then scan a selected image for Windows editions. It also lists detected physical disks and unused drive letters for the planned Windows and EFI volumes, rechecking selected letters as you choose them and before review. The app requests administrator privileges to inspect image editions and disks. This preview does **not** format disks or deploy Windows yet.
+
+Open `Windows Installer.sln` in Visual Studio with the workloads above, select the `WindowsInstallerUI` startup project and the `x64` platform, then run it. You can also use:
+
+```powershell
+dotnet run --project .\WindowsInstallerUI\WindowsInstallerUI.csproj -p:Platform=x64
+```
+
+### Example Build Commands
 > **Note**: These commands must be ran at the root directory of the repository.
 
 - To build and cleanup:

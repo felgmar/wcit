@@ -1,0 +1,247 @@
+<Window
+    x:Class="WindowsInstallerUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Windows Installer">
+    <Grid x:Name="RootLayout"
+          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid x:Name="AppTitleBar"
+              Grid.Row="0"
+              Height="40"
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid x:Name="TitleBarDragArea"
+                  Padding="16,0"
+                  ColumnSpacing="10"
+                  VerticalAlignment="Stretch"
+                  Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Width="24"
+                        Height="24"
+                        CornerRadius="5"
+                        Background="{ThemeResource AccentFillColorDefaultBrush}"
+                        VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE7C3;"
+                              FontSize="14"
+                              Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Grid.Column="1"
+                           Text="Windows Installer"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
+        <MenuBar Grid.Row="1">
+            <MenuBarItem Title="Appearance">
+                <MenuFlyoutSubItem Text="Theme">
+                    <RadioMenuFlyoutItem x:Name="SystemThemeItem"
+                                          Text="System default"
+                                          GroupName="Theme"
+                                          IsChecked="True"
+                                          Click="SystemThemeItem_Click" />
+                    <RadioMenuFlyoutItem x:Name="LightThemeItem"
+                                          Text="Light"
+                                          GroupName="Theme"
+                                          Click="LightThemeItem_Click" />
+                    <RadioMenuFlyoutItem x:Name="DarkThemeItem"
+                                          Text="Dark"
+                                          GroupName="Theme"
+                                          Click="DarkThemeItem_Click" />
+                </MenuFlyoutSubItem>
+            </MenuBarItem>
+        </MenuBar>
+        <ScrollViewer Grid.Row="2">
+            <Grid Padding="20" MaxWidth="1000" HorizontalAlignment="Center">
+                <StackPanel Spacing="12" Loaded="MainWindow_Loaded">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Windows deployment"
+                               Style="{StaticResource TitleTextBlockStyle}" />
+                    <TextBlock Text="Prepare an installation from a Windows image."
+                               Style="{StaticResource SubtitleTextBlockStyle}" />
+                </StackPanel>
+
+                <InfoBar IsOpen="True"
+                         Severity="Informational"
+                         Title="Getting started"
+                         Message="This early preview helps you prepare and review settings. It will not format disks or install Windows yet." />
+
+                <Border Padding="16"
+                        CornerRadius="8"
+                        BorderThickness="1"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="1. Windows installation media" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="Choose an ISO to mount or enter the drive letter of mounted installation media. The app searches recursively for install.wim and install.esd files. Mounted ISOs stay mounted until you eject them."
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <StackPanel Spacing="8">
+                            <ComboBox x:Name="MediaTypeBox"
+                                      Header="Installation media type"
+                                      SelectionChanged="MediaType_SelectionChanged">
+                                <ComboBoxItem Content="ISO file" />
+                                <ComboBoxItem Content="Mounted drive" />
+                            </ComboBox>
+                            <Grid x:Name="IsoSourcePanel" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="IsoPathBox"
+                                         Header="ISO file"
+                                         PlaceholderText="Select a Windows .iso file"
+                                         IsReadOnly="True" />
+                                <Button Grid.Column="1"
+                                        Content="Browse ISO..."
+                                        VerticalAlignment="Bottom"
+                                        Click="BrowseIso_Click" />
+                            </Grid>
+                            <StackPanel x:Name="DriveSourcePanel" Visibility="Collapsed">
+                                <TextBox x:Name="DriveLetterBox"
+                                         Header="Mounted drive letter"
+                                         PlaceholderText="For example, E:"
+                                         TextChanged="DriveLetter_TextChanged" />
+                            </StackPanel>
+                            <Button x:Name="FindImageButton"
+                                    Content="Find Windows image"
+                                    VerticalAlignment="Bottom"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    Click="FindImage_Click" />
+                            <ComboBox x:Name="ImageFilesBox"
+                                      Header="Found Windows image"
+                                      PlaceholderText="Choose a media source and search"
+                                      IsEnabled="False"
+                                      SelectionChanged="ImageFiles_SelectionChanged" />
+                            <TextBlock x:Name="ImageSearchStatus"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+
+                        <ComboBox x:Name="ImageEditionBox"
+                                  Header="Windows edition"
+                                  PlaceholderText="Select a Windows image first"
+                                  IsEnabled="False"
+                                  MaxWidth="480"
+                                  HorizontalAlignment="Left">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Value}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <Border Padding="16"
+                        CornerRadius="8"
+                        BorderThickness="1"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="2. Installation destination" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="Select a physical disk and unused drive letters. This preview does not modify disks."
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <Grid ColumnSpacing="16" RowSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <ComboBox x:Name="TargetDiskBox"
+                                      Header="Target installation disk"
+                                      PlaceholderText="Loading disks..."
+                                      IsEnabled="False"
+                                      SelectionChanged="TargetDisk_SelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBlock Text="Disk" />
+                                            <TextBlock Text="{Binding DiskNumber}" />
+                                            <TextBlock Text="-" />
+                                            <TextBlock Text="{Binding Model}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <ComboBox x:Name="WindowsDriveBox"
+                                     Grid.Column="1"
+                                     Header="Windows drive letter"
+                                     PlaceholderText="Select an unused letter"
+                                     IsEnabled="False"
+                                     DropDownOpened="DriveLetter_DropDownOpened"
+                                     SelectionChanged="DriveLetter_SelectionChanged" />
+                            <ComboBox x:Name="EfiDriveBox"
+                                     Grid.Row="1"
+                                     Header="EFI drive letter"
+                                     PlaceholderText="Select an unused letter"
+                                     IsEnabled="False"
+                                     DropDownOpened="DriveLetter_DropDownOpened"
+                                     SelectionChanged="DriveLetter_SelectionChanged" />
+                            <TextBox x:Name="DriversPathBox"
+                                     Grid.Row="2"
+                                     Grid.Column="1"
+                                     Header="Optional drivers folder"
+                                     PlaceholderText="Not required" />
+                            <TextBlock x:Name="DestinationStatus"
+                                       Grid.Row="2"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                        <InfoBar x:Name="DriveLetterError"
+                                 IsOpen="False"
+                                 Severity="Error"
+                                 IsClosable="False" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Spacing="8">
+                    <Button x:Name="ReviewButton"
+                            Content="Review setup"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="ReviewSetup_Click" />
+                    <InfoBar x:Name="StatusBar"
+                             IsOpen="False"
+                             Severity="Error"
+                             IsClosable="False" />
+                </StackPanel>
+
+                <Border x:Name="ReviewCard"
+                        Padding="16"
+                        CornerRadius="8"
+                        BorderThickness="1"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        Visibility="Collapsed">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Review your setup" Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock x:Name="ReviewSummary" TextWrapping="Wrap" />
+                        <TextBlock Text="No changes have been made to your computer."
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Window>

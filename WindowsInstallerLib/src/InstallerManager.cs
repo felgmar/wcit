@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.Versioning;
 
 namespace WindowsInstallerLib
@@ -359,6 +360,76 @@ namespace WindowsInstallerLib
             {
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Gets the available Windows editions in a WIM or ESD image.
+        /// </summary>
+        /// <param name="imageFilePath">The path to the WIM or ESD image.</param>
+        /// <returns>A dictionary mapping each image index to its edition name.</returns>
+        [SupportedOSPlatform("windows")]
+        public static Dictionary<int, string> GetImageEditions(string imageFilePath)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(imageFilePath);
+
+            Parameters parameters = new()
+            {
+                ImageFilePath = imageFilePath
+            };
+
+            return DeployManager.GetImageInfoT(ref parameters)
+                .ToDictionary(image => image.ImageIndex, image => image.ImageName);
+        }
+
+        /// <summary>
+        /// Gets the available physical disks, keyed by disk number and valued by model name.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public static SortedDictionary<int, string> GetDisks()
+        {
+            return DiskManager.GetDisks();
+        }
+
+        /// <summary>
+        /// Gets drive letters that are not currently assigned to a volume.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public static List<string> GetAvailableDriveLetters()
+        {
+            HashSet<char> assignedLetters = GetAssignedDriveLetters();
+
+            return Enumerable.Range('A', 'Z' - 'A' + 1)
+                .Select(letter => (char)letter)
+                .Where(letter => !assignedLetters.Contains(letter))
+                .Select(letter => $"{letter}:")
+                .ToList();
+        }
+
+        /// <summary>
+        /// Determines whether a drive letter is currently unassigned to a volume.
+        /// </summary>
+        /// <param name="driveLetter">The drive letter to check, such as "W:".</param>
+        [SupportedOSPlatform("windows")]
+        public static bool IsDriveLetterAvailable(string driveLetter)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(driveLetter);
+            string normalizedLetter = driveLetter.Trim();
+            if (normalizedLetter.Length != 2 ||
+                !char.IsAsciiLetter(normalizedLetter[0]) ||
+                normalizedLetter[1] != ':')
+            {
+                throw new ArgumentException("A drive letter must be in the format W:.", nameof(driveLetter));
+            }
+
+            return !GetAssignedDriveLetters().Contains(char.ToUpperInvariant(normalizedLetter[0]));
+        }
+
+        private static HashSet<char> GetAssignedDriveLetters()
+        {
+            return DriveInfo.GetDrives()
+                .Where(drive => !string.IsNullOrWhiteSpace(drive.Name))
+                .Select(drive => char.ToUpperInvariant(drive.Name[0]))
+                .ToHashSet();
         }
     }
 }
