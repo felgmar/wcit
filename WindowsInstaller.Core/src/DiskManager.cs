@@ -5,7 +5,7 @@ using System.Linq;
 using System.Management;
 using System.Runtime.Versioning;
 
-namespace WindowsInstallerLib
+namespace WindowsInstaller.Core
 {
     /// <summary>
     /// Provides functionality for managing and interacting with system disks on Windows platforms.

@@ -1,8 +1,8 @@
 ﻿using CommandLine;
 using System;
-using WindowsInstallerLib;
+using WindowsInstaller.Core;
 
-namespace ConsoleApp
+namespace WindowsInstaller.CLI
 {
     [Verb("install", HelpText = "Deploy Windows to a target disk")]
     internal sealed class ProgramOptions

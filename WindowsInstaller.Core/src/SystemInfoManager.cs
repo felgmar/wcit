@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-namespace WindowsInstallerLib
+namespace WindowsInstaller.Core
 {
     /// <summary>
     /// Provides methods for retrieving system firmware information and determining the firmware type.

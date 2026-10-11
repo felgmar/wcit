@@ -5,8 +5,8 @@ IF %1.==. (
     EXIT /B 1
 )
 
-IF %1==CONSOLEAPP (
-    pushd CONSOLEAPP
+IF %1==WINDOWSINSTALLER.CLI (
+    pushd WINDOWSINSTALLER.CLI
     dotnet run --nologo --self-contained --configuration "Debug"
     popd
 ) ELSE (

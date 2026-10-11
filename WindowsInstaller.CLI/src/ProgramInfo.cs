@@ -1,12 +1,12 @@
 using System.Reflection;
 using System.Runtime.Versioning;
 
-namespace ConsoleApp
+namespace WindowsInstaller.CLI
 {
     [SupportedOSPlatform("windows")]
     internal static class ProgramInfo
     {
-        private static string ProgramAuthor => "Felipe González Martín";
+        private static string ProgramAuthor => "Felipe Gonzï¿½lez Martï¿½n";
         private static string ProgramName => Assembly.GetExecutingAssembly().GetName().Name ?? "Windows Installer";
         private static string ProgramVersion => Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
         private static string ProgramConfigurationMode => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration ?? "Debug";

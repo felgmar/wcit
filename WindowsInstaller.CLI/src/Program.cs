@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Runtime.Versioning;
-using WindowsInstallerLib;
+using WindowsInstaller.Core;
 
-namespace ConsoleApp
+namespace WindowsInstaller.CLI
 {
     [SupportedOSPlatform("windows")]
     internal sealed class Program

@@ -3,7 +3,7 @@ using System.Runtime.Versioning;
 using System.Security;
 using System.Security.Principal;
 
-namespace WindowsInstallerLib
+namespace WindowsInstaller.Core
 {
     /// <summary>
     /// Provides utility methods for managing and checking user privileges.

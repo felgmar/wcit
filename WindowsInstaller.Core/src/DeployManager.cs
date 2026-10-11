@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Runtime.Versioning;
 
-namespace WindowsInstallerLib
+namespace WindowsInstaller.Core
 {
     /// <summary>
     /// Provides methods for managing the deployment of Windows images, including adding drivers, applying images,

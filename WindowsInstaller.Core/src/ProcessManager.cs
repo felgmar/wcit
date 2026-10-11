@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 
-namespace WindowsInstallerLib
+namespace WindowsInstaller.Core
 {
     /// <summary>
     /// Provides utility methods for managing and executing system processes.

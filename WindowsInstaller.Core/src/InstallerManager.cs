@@ -4,7 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.Versioning;
 
-namespace WindowsInstallerLib
+namespace WindowsInstaller.Core
 {
     /// <summary>
     /// Represents the parameters required for configuring and executing a disk imaging operation.
