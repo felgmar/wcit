@@ -22,7 +22,7 @@ If you just want to use the tool, grab the latest release from the **[Releases](
 ### Prerequisites  
 - **Windows 10/11**  
 - **.NET SDK 10.0**
-- **Visual Studio** (Community Edition or higher) with the `WinUI application development` workload to build the graphical app; the `.NET desktop development` workload is not required
+- **Visual Studio** (Community Edition or higher) with the `WinUI application development` workload to build the graphical app.
 - *(Optional)* [Inno Setup](https://jrsoftware.org/isinfo.php) if you want to compile the installer  
 
 ---
