@@ -10,8 +10,10 @@ if not exist "!MSBUILD!" goto no_msbuild
 
 set "PUBLISH_PROPERTY="
 if /i "%~1"=="Publish" set "PUBLISH_PROPERTY=-p:PublishDir="%~dp0..\build\publish""
+set "UI_VERSION_PROPERTY="
+if defined VERSION set "UI_VERSION_PROPERTY=-p:WindowsInstallerUIVersion=!VERSION!"
 
-"%MSBUILD%" "%~dp0..\Windows Installer.slnx" -restore -m -p:Platform=x64 -p:Configuration=%~2 -p:OutputPath="%~dp0..\build" -p:SelfContained=true -target:%~1 -verbosity:minimal !PUBLISH_PROPERTY!
+"%MSBUILD%" "%~dp0..\Windows Installer.slnx" -restore -p:Platform=x64 -p:Configuration=%~2 -p:OutputPath="%~dp0..\build" -p:SelfContained=true -target:%~1 -verbosity:minimal !PUBLISH_PROPERTY! !UI_VERSION_PROPERTY!
 exit /b %ERRORLEVEL%
 
 :no_vswhere
