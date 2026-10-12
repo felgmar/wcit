@@ -48,7 +48,7 @@
             <TextBlock x:Name="AppVersionLabel"
                        Grid.Column="1"
                        Margin="0,0,148,0"
-                       Text="Version 1.0.0"
+                       Text="Version"
                        FontSize="11"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        VerticalAlignment="Center"
