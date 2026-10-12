@@ -1,0 +1,14 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="ConsoleApp/ConsoleApp.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="WindowsInstallerLib/WindowsInstallerLib.csproj">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="WindowsInstallerUI/WindowsInstallerUI.csproj">
+    <Platform Project="x64" />
+  </Project>
+</Solution>

@@ -1,9 +1,0 @@
-{
-  "solution": {
-    "path": "Windows Installer.sln",
-    "projects": [
-      "WindowsInstallerUI\\WindowsInstallerUI.csproj",
-      "WindowsInstallerLib\\WindowsInstallerLib.csproj"
-    ]
-  }
-}

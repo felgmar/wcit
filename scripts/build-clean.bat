@@ -2,4 +2,5 @@
 
 CALL %~dp0/cleanup.bat
 
-dotnet build "Windows Installer.sln" --nologo --self-contained --property:OutputPath=%~dp0..\build\ --configuration "Debug"
+CALL "%~dp0build-solution.bat" Build Debug
+exit /b %ERRORLEVEL%
