@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace WindowsInstallerLib
 {
@@ -29,36 +31,23 @@ namespace WindowsInstallerLib
         /// <param name="args">The command-line arguments to pass to the process. This can be null or an empty string if no arguments are
         /// required.</param>
         /// <returns>The exit code of the process after it has completed execution.</returns>
-        internal static int StartCmdProcess(string fileName, string args)
+        internal static int StartCmdProcess(string fileName, params string[] args)
         {
-            Process process = new();
-
-            try
+            using Process process = new();
+            process.StartInfo.FileName = fileName;
+            process.StartInfo.UseShellExecute = false;
+            foreach (string argument in args)
             {
-                process.StartInfo.FileName = fileName;
-                process.StartInfo.Arguments = args;
-                process.StartInfo.UseShellExecute = false;
-                process.Start();
-                process.WaitForExit();
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (NotSupportedException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                process.Dispose();
-                ExitCode = process.ExitCode;
+                process.StartInfo.ArgumentList.Add(argument);
             }
 
+            if (!process.Start())
+            {
+                throw new InvalidOperationException($"Could not start {fileName}.");
+            }
+
+            process.WaitForExit();
+            ExitCode = process.ExitCode;
             return ExitCode;
         }
 
@@ -80,72 +69,69 @@ namespace WindowsInstallerLib
         /// <param name="DestinationDrive">The drive letter to assign to the primary partition.</param>
         /// <returns>The exit code of the DiskPart process. A value of 0 indicates success, while a non-zero value indicates
         /// failure.</returns>
-        internal static int StartDiskPartProcess(int DiskNumber, string EfiDrive, string DestinationDrive)
+        internal static int StartDiskPartProcess(
+            int DiskNumber,
+            string EfiDrive,
+            string DestinationDrive,
+            string FirmwareType)
         {
-            Process process = new();
-
-            try
+            if (!string.Equals(FirmwareType, "UEFI", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(FirmwareType, "BIOS", StringComparison.OrdinalIgnoreCase))
             {
-                process.StartInfo.FileName = "diskpart.exe";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardInput = true;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.CreateNoWindow = true;
+                throw new InvalidDataException($"Unsupported firmware type: {FirmwareType}");
+            }
 
-                process.Start();
+            using Process process = new();
+            process.StartInfo.FileName = "diskpart.exe";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardInput = true;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.CreateNoWindow = true;
 
-                Console.WriteLine($"Formatting disk {DiskNumber}, please wait...");
-                process.StandardInput.WriteLine($"select disk {DiskNumber}");
-                process.StandardInput.WriteLine("clean");
+            if (!process.Start())
+            {
+                throw new InvalidOperationException("DiskPart could not be started.");
+            }
+
+            Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
+            process.StandardInput.WriteLine($"select disk {DiskNumber}");
+            process.StandardInput.WriteLine("clean");
+            if (string.Equals(FirmwareType, "UEFI", StringComparison.OrdinalIgnoreCase))
+            {
                 process.StandardInput.WriteLine("convert gpt");
                 process.StandardInput.WriteLine("create partition efi size=100");
                 process.StandardInput.WriteLine("format fs=fat32 quick");
-                process.StandardInput.WriteLine($"assign letter {EfiDrive}");
+                process.StandardInput.WriteLine($"assign letter {EfiDrive.TrimEnd(':')}");
                 process.StandardInput.WriteLine("create partition msr size=16");
-                process.StandardInput.WriteLine("create partition primary");
+            }
+            else if (string.Equals(FirmwareType, "BIOS", StringComparison.OrdinalIgnoreCase))
+            {
+                process.StandardInput.WriteLine("convert mbr");
+                process.StandardInput.WriteLine("create partition primary size=500");
                 process.StandardInput.WriteLine("format fs=ntfs quick");
-                process.StandardInput.WriteLine($"assign letter {DestinationDrive}");
-                process.StandardInput.WriteLine("exit");
+                process.StandardInput.WriteLine("active");
+                process.StandardInput.WriteLine($"assign letter {EfiDrive.TrimEnd(':')}");
+            }
+            process.StandardInput.WriteLine("create partition primary");
+            process.StandardInput.WriteLine("format fs=ntfs quick");
+            process.StandardInput.WriteLine($"assign letter {DestinationDrive.TrimEnd(':')}");
+            process.StandardInput.WriteLine("exit");
+            process.StandardInput.Close();
+            process.WaitForExit();
+            string output = outputTask.GetAwaiter().GetResult();
+            ExitCode = process.ExitCode;
 
-                process.WaitForExit();
-                ExitCode = process.ExitCode;
-            }
-            catch (ObjectDisposedException)
+            if (output.Contains("DiskPart has encountered an error", StringComparison.OrdinalIgnoreCase))
             {
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Win32Exception)
-            {
-                throw;
-            }
-            catch (SystemException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
+                throw new IOException($"DiskPart reported an error while partitioning disk {DiskNumber}:{Environment.NewLine}{output}");
             }
 
-            finally
+            if (ExitCode != 0)
             {
-                switch (ExitCode)
-                {
-                    case 0:
-                        Console.WriteLine($"\nDisk {DiskNumber} has been formatted successfully.");
-                        break;
-                    case 1:
-                        Console.Error.WriteLine($"\nFailed to format the disk {DiskNumber}.");
-                        break;
-                }
-                process.Close();
-
+                throw new IOException($"DiskPart failed with exit code {ExitCode} while partitioning disk {DiskNumber}.");
             }
 
+            Console.WriteLine($"Disk {DiskNumber} has been formatted successfully.");
             return ExitCode;
         }
 
@@ -160,36 +146,23 @@ namespace WindowsInstallerLib
         /// DISM.</param>
         /// <returns>The exit code returned by the DISM process. A value of 0 typically indicates success, while non-zero values
         /// indicate an error or failure.</returns>
-        internal static int StartDismProcess(string args)
+        internal static int StartDismProcess(params string[] args)
         {
-            Process process = new();
-
-            try
+            using Process process = new();
+            process.StartInfo.FileName = "dism.exe";
+            process.StartInfo.UseShellExecute = false;
+            foreach (string argument in args)
             {
-                process.StartInfo.FileName = "dism.exe";
-                process.StartInfo.Arguments = args;
-                process.StartInfo.UseShellExecute = false;
-                process.Start();
-                process.WaitForExit();
-                ExitCode = process.ExitCode;
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Win32Exception)
-            {
-                throw;
-            }
-            catch (PlatformNotSupportedException)
-            {
-                throw;
-            }
-            finally
-            {
-                process.Close();
+                process.StartInfo.ArgumentList.Add(argument);
             }
 
+            if (!process.Start())
+            {
+                throw new InvalidOperationException("DISM could not be started.");
+            }
+
+            process.WaitForExit();
+            ExitCode = process.ExitCode;
             return ExitCode;
         }
 

@@ -1,5 +1,7 @@
-@ECHO off
+@ECHO OFF
 
-CALL %~dp0/cleanup.bat
+CALL "%~dp0cleanup.bat"
+IF ERRORLEVEL 1 EXIT /B %ERRORLEVEL%
 
-dotnet build "Windows Installer.sln" --nologo --self-contained --property:OutputPath=%~dp0..\build\ --configuration "Debug"
+CALL "%~dp0build-solution.bat" Build Debug
+EXIT /B %ERRORLEVEL%

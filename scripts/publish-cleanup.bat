@@ -1,9 +1,7 @@
-@ECHO off
+@ECHO OFF
 
-CALL %~dp0cleanup.bat
+CALL "%~dp0cleanup.bat"
+IF ERRORLEVEL 1 EXIT /B %ERRORLEVEL%
 
-dotnet publish "Windows Installer.sln" --nologo --self-contained --property:OutputPath=%~dp0..\build\ --configuration "Release"
-
-MOVE /Y %~dp0..\build\publish %~dp0..\
-RMDIR /Q /S %~dp0..\build
-MOVE /Y %~dp0..\publish %~dp0..\build
+CALL "%~dp0build-solution.bat" Publish Release
+EXIT /B %ERRORLEVEL%

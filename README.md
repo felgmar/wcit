@@ -21,8 +21,8 @@ If you just want to use the tool, grab the latest release from the **[Releases](
 
 ### Prerequisites  
 - **Windows 10/11**  
-- **.NET SDK** (version 8.0 or later — replace with your actual target)  
-- **Visual Studio** (Community Edition or higher) with `.NET desktop development` workload  
+- **.NET SDK 10.0**
+- **Visual Studio** (Community Edition or higher) with the `WinUI application development` workload to build the graphical app.
 - *(Optional)* [Inno Setup](https://jrsoftware.org/isinfo.php) if you want to compile the installer  
 
 ---
@@ -45,7 +45,13 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 
 ---
 
-### Example Build Commands  
+### WinUI installer
+
+The `WindowsInstallerUI` project is a WinUI 3 frontend with WCIT branding, a custom installer icon, a fixed 1024x768 window, and File, Appearance, and Help menus. The About dialog shows the app version and creator. It can mount a Windows ISO or search an already-mounted drive recursively for `install.wim` and `install.esd` files. When mounted-drive mode is selected, the drive letter can be left blank to automatically detect standard Windows installation media in mounted drives. The app then scans a selected image for Windows editions. Select an eligible physical disk, unused Windows and boot-partition drive letters, and optionally a drivers folder. The installer validates the setup, asks you to acknowledge the data loss, and then requires a final confirmation before cleaning and repartitioning the selected disk, applying the Windows image, optionally adding drivers, and installing boot files. The running Windows/boot disk is excluded and rechecked immediately before formatting. Installation requires administrator privileges. Disk changes are destructive and cannot be rolled back; use only a disk whose contents you are prepared to lose.
+
+Open `Windows Installer.slnx` in Visual Studio with the WinUI application development workload installed, select `WindowsInstallerUI` as the startup project and the `x64` platform, then run it. The build scripts use Visual Studio MSBuild so the Windows App SDK packaging tasks are available.
+
+### Example Build Commands
 > **Note**: These commands must be ran at the root directory of the repository.
 
 - To build and cleanup:
