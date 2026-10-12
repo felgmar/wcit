@@ -14,6 +14,7 @@ By running multiple instances, you can install Windows on several devices at onc
 
 ### Download Prebuilt Release  
 If you just want to use the tool, grab the latest release from the **[Releases](../../releases)** section on the right-hand side of this page.  
+To publish a release, push a numeric version tag such as `1.2.3.0` or `v1.2.3`. GitHub Actions runs only for tag pushes, builds the solution, compiles the Inno Setup installer, and attaches it to a GitHub Release.
 
 ---
 
@@ -33,12 +34,12 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 
 | Script | What it does |
 |--------|--------------|
-| `build.bat` | Builds the project in Release mode |
-| `build-clean.bat` | Cleans previous build artifacts, then builds |
+| `build.bat` | Builds the solution in Debug configuration |
+| `build-clean.bat` | Cleans previous build artifacts, then builds the solution in Debug configuration |
 | `publish.bat` | Publishes the project (self-contained build) |
-| `publish-cleanup.bat` | Cleans, then publishes the project |
+| `publish-cleanup.bat` | Cleans, then publishes the solution in Release configuration |
 | `compile-installer.bat` | Compiles without publishing |
-| `compile-installer-cleanup.bat` | Cleans, then compiles without publishing |
+| `compile-installer-cleanup.bat` | Cleans, publishes the solution in Release configuration, then compiles the installer |
 | `cleanup.bat` | Removes build artifacts |
 | `patch-installer-script.ps1` | Patches the installer script before compiling |
 | `download-installer-script.ps1` | Helper script for downloading the installer script |

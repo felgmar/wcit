@@ -1,0 +1,57 @@
+name: Build and publish release
+
+on:
+  push:
+    tags:
+      - "**"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4.3.0
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Add Visual Studio MSBuild to PATH
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress --yes
+
+      - name: Validate tag and configure installer version
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^v?(\d+\.){1,3}\d+$') {
+            throw "Tag '$tag' is not a supported release version. Use a version such as 1.2.3 or v1.2.3."
+          }
+
+          $version = $tag -replace '^v', ''
+          "INNO_SETUP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INNO_SETUP_COMPILER=${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build and compile installer
+        run: .\scripts\compile-installer-cleanup.bat
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -Path "build-installer" -Filter "*.exe" -File)
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one installer executable in build-installer; found $($installers.Count)."
+          }
+
+          & gh release create $env:GITHUB_REF_NAME $installers[0].FullName --title $env:GITHUB_REF_NAME --generate-notes --verify-tag
