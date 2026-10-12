@@ -42,11 +42,18 @@ public sealed partial class MainWindow : Window
             presenter.IsMaximizable = false;
         }
 
+        appWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "WindowsInstaller.ico"));
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(TitleBarDragArea);
         appWindow.Resize(new SizeInt32(1024, 768));
         _uiSettings.ColorValuesChanged += SystemColors_Changed;
+        AppVersionLabel.Text = $"Version {GetApplicationVersion()}";
         ApplySelectedTheme();
+    }
+
+    private static string GetApplicationVersion()
+    {
+        return typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -122,6 +129,48 @@ public sealed partial class MainWindow : Window
     private void DarkThemeItem_Click(object sender, RoutedEventArgs e)
     {
         SetSelectedTheme(ElementTheme.Dark);
+    }
+
+    private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private async void AboutMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        StackPanel aboutContent = new() { Spacing = 8 };
+        aboutContent.Children.Add(new TextBlock
+        {
+            Text = "WCIT - Windows CLI Installer Tool",
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        });
+        aboutContent.Children.Add(new TextBlock
+        {
+            Text = $"Version {GetApplicationVersion()}",
+            TextWrapping = TextWrapping.Wrap
+        });
+        aboutContent.Children.Add(new TextBlock
+        {
+            Text = "Created by Felipe González Martín (@felgmar)",
+            TextWrapping = TextWrapping.Wrap
+        });
+        aboutContent.Children.Add(new TextBlock
+        {
+            Text = "A WinUI frontend for preparing and installing Windows onto a selected disk.",
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        ContentDialog aboutDialog = new()
+        {
+            XamlRoot = RootLayout.XamlRoot,
+            Title = "About Windows Installer",
+            Content = aboutContent,
+            CloseButtonText = "Close",
+            DefaultButton = ContentDialogButton.Close
+        };
+
+        await aboutDialog.ShowAsync();
     }
 
     private void SetSelectedTheme(ElementTheme theme)

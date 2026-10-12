@@ -10,12 +10,21 @@
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
     <ApplicationManifest>..\ConsoleApp\app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\WindowsInstaller.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Company>felgmar</Company>
+    <Authors>Felipe González Martín</Authors>
+    <Product>Windows Installer</Product>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\WindowsInstaller.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,11 +10,14 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid x:Name="AppTitleBar"
-              Grid.Row="0"
-              Height="40"
+        <Grid Grid.Row="0"
               Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
             <Grid x:Name="TitleBarDragArea"
+                  Height="40"
                   Padding="16,0"
                   ColumnSpacing="10"
                   VerticalAlignment="Stretch"
@@ -23,25 +26,45 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Border Width="24"
-                        Height="24"
-                        CornerRadius="5"
+                <Border Width="26"
+                        Height="26"
+                        CornerRadius="6"
                         Background="{ThemeResource AccentFillColorDefaultBrush}"
                         VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE7C3;"
-                              FontSize="14"
+                              FontSize="15"
                               Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center" />
                 </Border>
-                <TextBlock Grid.Column="1"
-                           Text="Windows Installer"
-                           FontSize="13"
-                           FontWeight="SemiBold"
-                           VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="Windows Installer"
+                               FontSize="13"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="WCIT"
+                               FontSize="9"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
             </Grid>
+            <TextBlock x:Name="AppVersionLabel"
+                       Grid.Column="1"
+                       Margin="0,0,148,0"
+                       Text="Version 1.0.0"
+                       FontSize="11"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Right"
+                       IsHitTestVisible="False" />
         </Grid>
         <MenuBar Grid.Row="1">
+            <MenuBarItem Title="File">
+                <MenuFlyoutItem Text="Exit"
+                                Click="ExitMenuItem_Click">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="F4" Modifiers="Menu" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+            </MenuBarItem>
             <MenuBarItem Title="Appearance">
                 <MenuFlyoutSubItem Text="Theme">
                     <RadioMenuFlyoutItem x:Name="SystemThemeItem"
@@ -58,6 +81,10 @@
                                           GroupName="Theme"
                                           Click="DarkThemeItem_Click" />
                 </MenuFlyoutSubItem>
+            </MenuBarItem>
+            <MenuBarItem Title="Help">
+                <MenuFlyoutItem Text="About Windows Installer..."
+                                Click="AboutMenuItem_Click" />
             </MenuBarItem>
         </MenuBar>
         <ScrollViewer Grid.Row="2">
