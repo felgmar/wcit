@@ -84,7 +84,7 @@
                     <StackPanel Spacing="12">
                         <StackPanel Spacing="4">
                             <TextBlock Text="1. Windows installation media" Style="{StaticResource SubtitleTextBlockStyle}" />
-                            <TextBlock Text="Choose an ISO to mount or enter the drive letter of mounted installation media. The app searches recursively for install.wim and install.esd files. Repeated searches reuse the mounted ISO; selecting a different ISO replaces the previous ISO mounted by this app."
+                            <TextBlock Text="Choose an ISO to mount or enter the drive letter of mounted installation media. Leave the drive letter blank to search mounted drives for standard Windows installation media. Specified drives are searched recursively; repeated ISO searches reuse the mounted ISO, and choosing another ISO replaces the previous one mounted by this app."
                                        TextWrapping="Wrap"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </StackPanel>
@@ -112,8 +112,8 @@
                             </Grid>
                             <StackPanel x:Name="DriveSourcePanel" Visibility="Collapsed">
                                 <TextBox x:Name="DriveLetterBox"
-                                         Header="Mounted drive letter"
-                                         PlaceholderText="For example, E:"
+                                         Header="Mounted drive letter (optional)"
+                                         PlaceholderText="Leave blank to find media automatically"
                                          TextChanged="DriveLetter_TextChanged" />
                             </StackPanel>
                             <Button x:Name="FindImageButton"

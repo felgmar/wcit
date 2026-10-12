@@ -217,12 +217,16 @@ public sealed partial class MainWindow : Window
         MediaTypeBox.IsEnabled = false;
         DriveLetterBox.IsEnabled = false;
         ImageFilesBox.IsEnabled = false;
+        ImageFilesBox.ItemsSource = null;
+        ImageEditionBox.ItemsSource = null;
+        ImageEditionBox.IsEnabled = false;
         ImageSearchStatus.Text = "Preparing installation media...";
         StatusBar.IsOpen = false;
         InvalidateReview();
 
         try
         {
+            string[] imageFiles;
             string mediaRoot;
             if (MediaTypeBox.SelectedIndex == 0)
             {
@@ -259,38 +263,43 @@ public sealed partial class MainWindow : Window
                 }
 
                 ImageSearchStatus.Text = $"ISO mounted at {mediaRoot} Searching for Windows images...";
+                imageFiles = await Task.Run(() => FindWindowsImages(mediaRoot));
             }
             else
             {
                 string driveInput = DriveLetterBox.Text.Trim();
                 if (string.IsNullOrWhiteSpace(driveInput))
                 {
-                    ShowValidationError("Enter the drive letter of your mounted installation media.");
-                    return;
+                    ImageSearchStatus.Text = "Searching mounted drives for Windows installation media...";
+                    imageFiles = await Task.Run(FindWindowsImagesOnMountedDrives);
                 }
-
-                mediaRoot = NormalizeDriveRoot(driveInput);
-                if (!Directory.Exists(mediaRoot))
+                else
                 {
-                    throw new DirectoryNotFoundException($"The drive {mediaRoot} is not available.");
-                }
+                    mediaRoot = NormalizeDriveRoot(driveInput);
+                    if (!Directory.Exists(mediaRoot))
+                    {
+                        throw new DirectoryNotFoundException($"The drive {mediaRoot} is not available.");
+                    }
 
-                ImageSearchStatus.Text = $"Searching {mediaRoot} for Windows images...";
+                    ImageSearchStatus.Text = $"Searching {mediaRoot} for Windows images...";
+                    imageFiles = await Task.Run(() => FindWindowsImages(mediaRoot));
+                }
             }
 
-            string[] imageFiles = await Task.Run(() => FindWindowsImages(mediaRoot));
             if (imageFiles.Length == 0)
             {
-                ImageFilesBox.ItemsSource = null;
                 ImageFilesBox.IsEnabled = false;
-                ImageSearchStatus.Text = $"No install.wim or install.esd files were found under {mediaRoot}.";
+                ImageSearchStatus.Text = MediaTypeBox.SelectedIndex == 1 &&
+                                         string.IsNullOrWhiteSpace(DriveLetterBox.Text)
+                    ? "No Windows installation images were found. Automatic search checks the \\sources folder on mounted drives."
+                    : "No install.wim or install.esd files were found in the selected media.";
                 return;
             }
 
             ImageFilesBox.ItemsSource = imageFiles;
             ImageFilesBox.SelectedIndex = 0;
             ImageFilesBox.IsEnabled = true;
-            ImageSearchStatus.Text = $"Found {imageFiles.Length} Windows image file(s) under {mediaRoot}.";
+            ImageSearchStatus.Text = $"Found {imageFiles.Length} Windows image file(s).";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or Win32Exception or ArgumentException)
         {
@@ -775,6 +784,27 @@ public sealed partial class MainWindow : Window
             .Where(path =>
                 string.Equals(Path.GetFileName(path), "install.wim", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(Path.GetFileName(path), "install.esd", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string[] FindWindowsImagesOnMountedDrives()
+    {
+        return DriveInfo.GetDrives()
+            .Where(drive => drive.IsReady)
+            .SelectMany(drive =>
+            {
+                string sourcesDirectory = Path.Combine(drive.RootDirectory.FullName, "sources");
+                if (!Directory.Exists(sourcesDirectory))
+                {
+                    return Array.Empty<string>();
+                }
+
+                return Directory.EnumerateFiles(sourcesDirectory)
+                    .Where(path =>
+                        string.Equals(Path.GetFileName(path), "install.wim", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(Path.GetFileName(path), "install.esd", StringComparison.OrdinalIgnoreCase));
+            })
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
