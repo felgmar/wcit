@@ -1,6 +1,7 @@
-@ECHO off
+@ECHO OFF
 
-CALL %~dp0/cleanup.bat
+CALL "%~dp0cleanup.bat"
+IF ERRORLEVEL 1 EXIT /B %ERRORLEVEL%
 
 CALL "%~dp0build-solution.bat" Build Debug
-exit /b %ERRORLEVEL%
+EXIT /B %ERRORLEVEL%
