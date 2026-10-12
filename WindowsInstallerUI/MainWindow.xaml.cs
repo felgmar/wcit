@@ -523,7 +523,12 @@ public sealed partial class MainWindow : Window
             imageIndex,
             fullImagePath,
             DriversPathBox.Text.Trim(),
-            InstallerManager.GetFirmwareType());
+            InstallerManager.GetFirmwareType())
+        {
+            SourceMediaPath = MediaTypeBox.SelectedIndex == 0
+                ? Path.GetFullPath(IsoPathBox.Text.Trim())
+                : string.Empty
+        };
     }
 
     private static void ValidateInstallationParameters(Parameters parameters)

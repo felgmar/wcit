@@ -43,6 +43,8 @@ namespace WindowsInstallerLib
                     $"Disk {parameters.DiskNumber} contains the running Windows or boot partition and cannot be erased.");
             }
 
+            EnsureInstallationInputsAreNotOnDisk(parameters);
+
             if (!InstallerManager.IsDriveLetterAvailable(parameters.EfiDrive) ||
                 !InstallerManager.IsDriveLetterAvailable(parameters.DestinationDrive))
             {
@@ -169,6 +171,34 @@ namespace WindowsInstallerLib
             }
 
             return protectedDisks;
+        }
+
+        internal static void EnsureInstallationInputsAreNotOnDisk(Parameters parameters)
+        {
+            string[] inputPaths =
+            [
+                parameters.SourceDrive,
+                parameters.ImageFilePath,
+                parameters.AdditionalDrive,
+                parameters.SourceMediaPath
+            ];
+
+            foreach (string path in inputPaths.Where(path => !string.IsNullOrWhiteSpace(path)))
+            {
+                string? root = Path.GetPathRoot(Path.GetFullPath(path));
+                if (root is null || root.Length < 2 || root[1] != ':')
+                {
+                    continue;
+                }
+
+                int? sourceDiskNumber = GetDiskNumberForDriveLetter(root[..2]);
+                if (sourceDiskNumber == parameters.DiskNumber)
+                {
+                    throw new InvalidOperationException(
+                        $"The selected disk also contains an installation input ({path}) and cannot be erased. " +
+                        "Move the image and optional drivers to another disk before continuing.");
+                }
+            }
         }
 
         private static int? GetDiskNumberForDriveLetter(string driveLetter)

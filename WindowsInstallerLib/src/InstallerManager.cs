@@ -39,6 +39,7 @@ namespace WindowsInstallerLib
         public string ImageFilePath { get; set; } = ImageFilePath;
         public string AdditionalDrive { get; set; } = AdditionalDrive;
         public string FirmwareType { get; set; } = FirmwareType;
+        public string SourceMediaPath { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -419,6 +420,8 @@ namespace WindowsInstallerLib
                 throw new InvalidOperationException(
                     $"Disk {parameters.DiskNumber} contains the running Windows or boot partition and cannot be erased.");
             }
+
+            DiskManager.EnsureInstallationInputsAreNotOnDisk(parameters);
 
             if (!IsDriveLetterAvailable(parameters.DestinationDrive) ||
                 !IsDriveLetterAvailable(parameters.EfiDrive))
