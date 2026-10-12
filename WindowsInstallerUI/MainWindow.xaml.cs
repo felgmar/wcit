@@ -1,10 +1,11 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Windowing;
-using Windows.Storage.Pickers;
 using Windows.Graphics;
 using Windows.UI.ViewManagement;
 using WindowsInstallerLib;
@@ -156,19 +157,108 @@ public sealed partial class MainWindow : Window
             : ElementTheme.Dark;
     }
 
-    private async void BrowseIso_Click(object sender, RoutedEventArgs e)
+    private void BrowseIso_Click(object sender, RoutedEventArgs e)
     {
-        FileOpenPicker picker = new();
-        picker.FileTypeFilter.Add(".iso");
-        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
-
-        var file = await picker.PickSingleFileAsync();
-        if (file is not null)
+        try
         {
-            MediaTypeBox.SelectedIndex = 0;
-            IsoPathBox.Text = file.Path;
-            ResetImageSearch();
+            string? filePath = PickIsoFile();
+            if (filePath is not null)
+            {
+                MediaTypeBox.SelectedIndex = 0;
+                IsoPathBox.Text = filePath;
+                ResetImageSearch();
+            }
         }
+        catch (Exception ex)
+        {
+            ShowValidationError($"Could not open the ISO file picker: {ex.Message}");
+        }
+    }
+
+    private string? PickIsoFile()
+    {
+        StringBuilder selectedPath = new(capacity: 32768);
+        OpenFileName dialog = new()
+        {
+            structSize = (uint)Marshal.SizeOf<OpenFileName>(),
+            ownerWindow = WindowNative.GetWindowHandle(this),
+            filter = "Windows ISO images (*.iso)\0*.iso\0All files (*.*)\0*.*\0\0",
+            filterIndex = 1,
+            file = selectedPath,
+            maxFile = (uint)selectedPath.Capacity,
+            title = "Select a Windows ISO",
+            flags = (uint)(OpenFileNameFlags.FileMustExist |
+                           OpenFileNameFlags.PathMustExist |
+                           OpenFileNameFlags.NoChangeDirectory |
+                           OpenFileNameFlags.Explorer),
+            defaultExtension = "iso"
+        };
+
+        if (GetOpenFileName(ref dialog))
+        {
+            return selectedPath.ToString();
+        }
+
+        uint error = CommDlgExtendedError();
+        if (error != 0)
+        {
+            throw new InvalidOperationException(
+                $"The Windows file dialog reported error 0x{error:X8}.");
+        }
+
+        return null;
+    }
+
+    [DllImport("comdlg32.dll", EntryPoint = "GetOpenFileNameW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetOpenFileName(ref OpenFileName openFileName);
+
+    [DllImport("comdlg32.dll", EntryPoint = "CommDlgExtendedError")]
+    private static extern uint CommDlgExtendedError();
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct OpenFileName
+    {
+        public uint structSize;
+        public IntPtr ownerWindow;
+        public IntPtr instance;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? filter;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? customFilter;
+        public uint maxCustomFilter;
+        public uint filterIndex;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public StringBuilder? file;
+        public uint maxFile;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public StringBuilder? fileTitle;
+        public uint maxFileTitle;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? initialDirectory;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? title;
+        public uint flags;
+        public ushort fileOffset;
+        public ushort fileExtension;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? defaultExtension;
+        public IntPtr customData;
+        public IntPtr hook;
+        [MarshalAs(UnmanagedType.LPWStr)]
+        public string? templateName;
+        public IntPtr reserved;
+        public uint reservedValue;
+        public uint flagsExtended;
+    }
+
+    [Flags]
+    private enum OpenFileNameFlags : uint
+    {
+        FileMustExist = 0x00001000,
+        PathMustExist = 0x00000800,
+        NoChangeDirectory = 0x00000008,
+        Explorer = 0x00080000
     }
 
     private void MediaType_SelectionChanged(object sender, SelectionChangedEventArgs e)
