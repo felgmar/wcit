@@ -22,7 +22,7 @@ If you just want to use the tool, grab the latest release from the **[Releases](
 ### Prerequisites  
 - **Windows 10/11**  
 - **.NET SDK 10.0**
-- **Visual Studio** (Community Edition or higher) with the `.NET desktop development` and `WinUI application development` workloads to build the graphical app
+- **Visual Studio** (Community Edition or higher) with the `WinUI application development` workload to build the graphical app; the `.NET desktop development` workload is not required
 - *(Optional)* [Inno Setup](https://jrsoftware.org/isinfo.php) if you want to compile the installer  
 
 ---
@@ -49,7 +49,7 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 
 The `WindowsInstallerUI` project is a WinUI 3 frontend with a fixed 1024x768 window and system, light, and dark themes under the Appearance menu. It can mount a Windows ISO or search an already-mounted drive recursively for `install.wim` and `install.esd` files, then scan a selected image for Windows editions. Select an eligible physical disk, unused Windows and boot-partition drive letters, and optionally a drivers folder. The installer validates the setup, asks you to acknowledge the data loss, and then requires a final confirmation before cleaning and repartitioning the selected disk, applying the Windows image, optionally adding drivers, and installing boot files. The running Windows/boot disk is excluded and rechecked immediately before formatting. Installation requires administrator privileges. Disk changes are destructive and cannot be rolled back; use only a disk whose contents you are prepared to lose.
 
-Open `Windows Installer.sln` in Visual Studio with the workloads above, select the `WindowsInstallerUI` startup project and the `x64` platform, then run it. You can also use:
+Open `Windows Installer.sln` in Visual Studio with the WinUI application development workload installed, select the `WindowsInstallerUI` startup project and the `x64` platform, then run it. The `.NET desktop development` workload is not needed. You can also use:
 
 ```powershell
 dotnet run --project .\WindowsInstallerUI\WindowsInstallerUI.csproj -p:Platform=x64
