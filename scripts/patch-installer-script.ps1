@@ -9,7 +9,7 @@ param (
     [String]$Value
 )
 
-process {
+begin {
     try {
         foreach ($Field in $Define) {
             $ScriptFile = Get-Content -Path $OutputPath -Raw
