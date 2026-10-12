@@ -84,7 +84,7 @@
                     <StackPanel Spacing="12">
                         <StackPanel Spacing="4">
                             <TextBlock Text="1. Windows installation media" Style="{StaticResource SubtitleTextBlockStyle}" />
-                            <TextBlock Text="Choose an ISO to mount or enter the drive letter of mounted installation media. The app searches recursively for install.wim and install.esd files. Mounted ISOs stay mounted until you eject them."
+                            <TextBlock Text="Choose an ISO to mount or enter the drive letter of mounted installation media. The app searches recursively for install.wim and install.esd files. Repeated searches reuse the mounted ISO; selecting a different ISO replaces the previous ISO mounted by this app."
                                        TextWrapping="Wrap"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </StackPanel>

@@ -19,6 +19,9 @@ public sealed partial class MainWindow : Window
     private bool _isLoadingDestinationOptions;
     private bool _isUpdatingDriveChoices;
     private bool _isInstalling;
+    private bool _isFindingImage;
+    private string? _mountedIsoPath;
+    private string? _mountedIsoRoot;
     private int? _targetDiskNumber;
     private readonly UISettings _uiSettings = new();
     private ElementTheme _selectedTheme = ElementTheme.Default;
@@ -203,11 +206,20 @@ public sealed partial class MainWindow : Window
 
     private async void FindImage_Click(object sender, RoutedEventArgs e)
     {
+        if (_isFindingImage)
+        {
+            return;
+        }
+
+        _isFindingImage = true;
         FindImageButton.IsEnabled = false;
+        BrowseIsoButton.IsEnabled = false;
+        MediaTypeBox.IsEnabled = false;
+        DriveLetterBox.IsEnabled = false;
         ImageFilesBox.IsEnabled = false;
         ImageSearchStatus.Text = "Preparing installation media...";
         StatusBar.IsOpen = false;
-        ReviewCard.Visibility = Visibility.Collapsed;
+        InvalidateReview();
 
         try
         {
@@ -227,7 +239,25 @@ public sealed partial class MainWindow : Window
                     throw new FileNotFoundException("Select an existing .iso file.", isoPath);
                 }
 
-                mediaRoot = await Task.Run(() => MountIso(isoPath));
+                string fullIsoPath = Path.GetFullPath(isoPath);
+                if (string.Equals(_mountedIsoPath, fullIsoPath, StringComparison.OrdinalIgnoreCase) &&
+                    _mountedIsoRoot is not null &&
+                    Directory.Exists(_mountedIsoRoot))
+                {
+                    mediaRoot = _mountedIsoRoot;
+                }
+                else
+                {
+                    MountedIso mountedIso = await Task.Run(
+                        () => MountIso(fullIsoPath, _mountedIsoPath));
+                    mediaRoot = mountedIso.Root;
+                    _mountedIsoPath = mountedIso.MountedByApplication ||
+                                      string.Equals(_mountedIsoPath, fullIsoPath, StringComparison.OrdinalIgnoreCase)
+                        ? fullIsoPath
+                        : null;
+                    _mountedIsoRoot = mediaRoot;
+                }
+
                 ImageSearchStatus.Text = $"ISO mounted at {mediaRoot} Searching for Windows images...";
             }
             else
@@ -269,6 +299,10 @@ public sealed partial class MainWindow : Window
         finally
         {
             FindImageButton.IsEnabled = true;
+            BrowseIsoButton.IsEnabled = true;
+            MediaTypeBox.IsEnabled = true;
+            DriveLetterBox.IsEnabled = MediaTypeBox.SelectedIndex == 1;
+            _isFindingImage = false;
         }
     }
 
@@ -740,15 +774,29 @@ public sealed partial class MainWindow : Window
             .ToArray();
     }
 
-    private static string MountIso(string isoPath)
+    private static MountedIso MountIso(string isoPath, string? previouslyMountedIsoPath)
     {
         string escapedPath = isoPath.Replace("'", "''", StringComparison.Ordinal);
+        string dismountPreviousIso = string.IsNullOrWhiteSpace(previouslyMountedIsoPath)
+            ? string.Empty
+            : "$previousImage = Get-DiskImage -ImagePath '" +
+              previouslyMountedIsoPath.Replace("'", "''", StringComparison.Ordinal) +
+              "' -ErrorAction SilentlyContinue; " +
+              "if ($previousImage -and $previousImage.Attached) { " +
+              "Dismount-DiskImage -ImagePath $previousImage.ImagePath -ErrorAction Stop }; ";
         string script =
             "$ErrorActionPreference = 'Stop'; " +
+            dismountPreviousIso +
+            $"$image = Get-DiskImage -ImagePath '{escapedPath}' -ErrorAction SilentlyContinue; " +
+            "$mountedByApplication = $false; " +
+            "if (-not $image -or -not $image.Attached) { " +
             $"Mount-DiskImage -ImagePath '{escapedPath}' -PassThru | Out-Null; " +
-            $"$volume = Get-DiskImage -ImagePath '{escapedPath}' | Get-Volume | Where-Object DriveLetter | Select-Object -First 1; " +
+            "$mountedByApplication = $true; " +
+            $"$image = Get-DiskImage -ImagePath '{escapedPath}'; " +
+            "} " +
+            "$volume = $image | Get-Volume | Where-Object DriveLetter | Select-Object -First 1; " +
             "if ($null -eq $volume) { throw 'The ISO was mounted, but Windows did not assign it a drive letter.' }; " +
-            "Write-Output ($volume.DriveLetter + ':')";
+            "Write-Output ($volume.DriveLetter + '|' + [int]$mountedByApplication)";
 
         ProcessStartInfo startInfo = new()
         {
@@ -777,7 +825,16 @@ public sealed partial class MainWindow : Window
                 string.IsNullOrWhiteSpace(error) ? "Windows could not mount the ISO." : error);
         }
 
-        return NormalizeDriveRoot(output);
+        string[] result = output.Split('|', 2, StringSplitOptions.TrimEntries);
+        if (result.Length != 2 || result[1] is not ("0" or "1"))
+        {
+            throw new InvalidOperationException("Windows mounted the ISO but returned an invalid drive-letter result.");
+        }
+
+        return new MountedIso(
+            isoPath,
+            NormalizeDriveRoot(result[0]),
+            result[1] == "1");
     }
 
     private static string NormalizeDriveRoot(string value)
@@ -821,5 +878,6 @@ public sealed partial class MainWindow : Window
     }
 
     private sealed record DiskOption(int DiskNumber, string Model);
+    private sealed record MountedIso(string Path, string Root, bool MountedByApplication);
 
 }
