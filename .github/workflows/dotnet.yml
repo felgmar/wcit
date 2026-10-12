@@ -22,9 +22,9 @@ jobs:
       uses: actions/setup-dotnet@v4.3.0
       with:
         dotnet-version: 10.0.x
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Add Visual Studio MSBuild to PATH
+      uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
     - name: Build
-      run: dotnet build --no-restore -p:Platform=x64
+      run: msbuild "Windows Installer.sln" -restore -m -p:Platform=x64 -p:Configuration=Debug -verbosity:minimal
     - name: Test
       run: dotnet test --no-build --verbosity normal

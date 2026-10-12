@@ -1,13 +1,12 @@
 name: Workflow lint
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
 
 permissions:
   contents: read
+  checks: write
 
 jobs:
   actionlint:
@@ -18,5 +17,5 @@ jobs:
       - name: Lint GitHub Actions workflows
         uses: reviewdog/action-actionlint@d290e336d5a743810aef4404f757dc862276d2ae # v1.73.4
         with:
-          reporter: local
+          reporter: github-pr-check
           fail_level: error
