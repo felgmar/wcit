@@ -136,6 +136,21 @@ public sealed partial class MainWindow : Window
         Close();
     }
 
+    private void RepositoryMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://github.com/felgmar/wcit")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            ShowValidationError($"Could not open the GitHub repository: {ex.Message}");
+        }
+    }
+
     private async void AboutMenuItem_Click(object sender, RoutedEventArgs e)
     {
         StackPanel aboutContent = new() { Spacing = 8 };

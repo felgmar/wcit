@@ -84,6 +84,8 @@
             <MenuBarItem Title="Help">
                 <MenuFlyoutItem Text="About Windows Installer..."
                                 Click="AboutMenuItem_Click" />
+                <MenuFlyoutItem Text="Repository..."
+                                Click="RepositoryMenuItem_Click" />
             </MenuBarItem>
         </MenuBar>
         <ScrollViewer Grid.Row="2">
