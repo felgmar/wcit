@@ -128,7 +128,7 @@ namespace WindowsInstallerLib
         {
             HashSet<int> protectedDisks = [];
             string systemDrive = Path.GetPathRoot(Environment.SystemDirectory)?.TrimEnd('\\') ?? string.Empty;
-            WqlObjectQuery query = new("SELECT Index FROM Win32_DiskDrive");
+            WqlObjectQuery query = new("SELECT * FROM Win32_DiskDrive");
             using ManagementObjectSearcher searcher = new(query);
             using ManagementObjectCollection disks = searcher.Get();
 
@@ -173,7 +173,7 @@ namespace WindowsInstallerLib
 
         private static int? GetDiskNumberForDriveLetter(string driveLetter)
         {
-            WqlObjectQuery query = new("SELECT Index FROM Win32_DiskDrive");
+            WqlObjectQuery query = new("SELECT * FROM Win32_DiskDrive");
             using ManagementObjectSearcher searcher = new(query);
             using ManagementObjectCollection disks = searcher.Get();
 
