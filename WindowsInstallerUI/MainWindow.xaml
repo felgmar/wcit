@@ -29,13 +29,12 @@
                 <Border Width="26"
                         Height="26"
                         CornerRadius="6"
-                        Background="{ThemeResource AccentFillColorDefaultBrush}"
                         VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE7C3;"
-                              FontSize="15"
-                              Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center" />
+                    <Image Source="Assets/WindowsInstaller.png"
+                           Width="26"
+                           Height="26"
+                           Stretch="Uniform"
+                           AutomationProperties.Name="Windows Installer icon" />
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="Windows Installer"

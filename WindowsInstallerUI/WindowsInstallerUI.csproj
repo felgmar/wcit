@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Content Include="Assets\WindowsInstaller.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\WindowsInstaller.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
