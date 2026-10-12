@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     runs-on: windows-latest
 
     steps:
@@ -44,22 +44,38 @@ jobs:
       - name: Build and compile installer
         run: .\scripts\compile-installer-cleanup.bat
 
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: installer
+          path: build-installer/*.exe
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download installer artifact
+        uses: actions/download-artifact@v4.3.0
+        with:
+          name: installer
+          path: build-installer
+
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: pwsh
+        shell: bash
         run: |
-          $installers = @(Get-ChildItem -Path "build-installer" -Filter "*.exe" -File)
-          if ($installers.Count -ne 1) {
-            throw "Expected exactly one installer executable in build-installer; found $($installers.Count)."
-          }
+          mapfile -t installers < <(find build-installer -maxdepth 1 -type f -name '*.exe' -print)
+          if [[ "${#installers[@]}" -ne 1 ]]; then
+            echo "Expected exactly one installer executable in build-installer; found ${#installers[@]}." >&2
+            exit 1
+          fi
 
-          $arguments = @(
-            "release", "create", $env:GITHUB_REF_NAME, $installers[0].FullName,
-            "--title", $env:GITHUB_REF_NAME, "--generate-notes", "--verify-tag"
-          )
-          if ($env:GITHUB_REF_NAME -match '-') {
-            $arguments += @("--draft", "--prerelease")
-          }
+          args=(release create "$GITHUB_REF_NAME" "${installers[0]}" --title "$GITHUB_REF_NAME" --generate-notes --verify-tag)
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            args+=(--draft --prerelease)
+          fi
 
-          & gh @arguments
+          gh "${args[@]}"
