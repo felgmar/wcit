@@ -14,7 +14,6 @@ By running multiple instances, you can install Windows on several devices at onc
 
 ### Download Prebuilt Release  
 If you just want to use the tool, grab the latest release from the **[Releases](../../releases)** section on the right-hand side of this page.  
-To publish a release, push a numeric version tag such as `1.2.3.0` or `v1.2.3`. GitHub Actions runs only for tag pushes, builds the solution, compiles the Inno Setup installer, and attaches it to a GitHub Release.
 
 ---
 
