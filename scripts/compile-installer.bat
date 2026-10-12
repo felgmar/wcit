@@ -8,8 +8,8 @@ SET REPOSITORYDIR="%~dp0.."
 SET OUTPUTDIR="%~dp0..\build-installer"
 SET SETUPSCRIPT="%~dp0..\build-installer\wcit-setup.iss"
 SET USERNAME="felgmar"
-SET VERSION="1.0.2.1"
-IF DEFINED INNO_SETUP_VERSION SET VERSION="%INNO_SETUP_VERSION%"
+IF NOT DEFINED VERSION IF DEFINED INNO_SETUP_VERSION SET "VERSION=%INNO_SETUP_VERSION%"
+IF NOT DEFINED VERSION SET "VERSION=1.0.2.1"
 
 IF NOT EXIST "%COMPILER%" GOTO COMPILERNOTFOUND
 
@@ -46,7 +46,7 @@ CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-sc
 IF ERRORLEVEL 1 EXIT /B %ERRORLEVEL%
 CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppLicense -Value %LICENSE%}"
 IF ERRORLEVEL 1 EXIT /B %ERRORLEVEL%
-CALL powershell.exe -ExecutionPolicy Bypass -Command "& {%~dp0patch-installer-script.ps1 -OutputPath %SETUPSCRIPT% -Define AppVersion -Value %VERSION%}"
+CALL powershell.exe -ExecutionPolicy Bypass -File "%~dp0patch-installer-script.ps1" -OutputPath %SETUPSCRIPT% -Define AppVersion -Value "%VERSION%"
 IF ERRORLEVEL 1 EXIT /B %ERRORLEVEL%
 
 ECHO COMPILING INSTALLER...

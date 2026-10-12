@@ -29,7 +29,8 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup --no-progress --yes
 
-      - name: Validate tag and configure installer version
+      - name: Validate tag and derive installer version
+        id: version
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
@@ -38,10 +39,12 @@ jobs:
           }
 
           $version = ($tag -replace '^v', '') -split '-', 2 | Select-Object -First 1
-          "INNO_SETUP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           "INNO_SETUP_COMPILER=${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Build and compile installer
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: .\scripts\compile-installer-cleanup.bat
 
       - name: Upload installer artifact
