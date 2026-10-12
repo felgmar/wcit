@@ -71,9 +71,10 @@
                 </StackPanel>
 
                 <InfoBar IsOpen="True"
-                         Severity="Informational"
-                         Title="Getting started"
-                         Message="This early preview helps you prepare and review settings. It will not format disks or install Windows yet." />
+                         Severity="Warning"
+                         IsClosable="False"
+                         Title="Disk erasure warning"
+                         Message="Installing Windows permanently erases every partition and file on the selected disk. The running Windows and boot disks are excluded." />
 
                 <Border Padding="16"
                         CornerRadius="8"
@@ -104,6 +105,7 @@
                                          PlaceholderText="Select a Windows .iso file"
                                          IsReadOnly="True" />
                                 <Button Grid.Column="1"
+                                        x:Name="BrowseIsoButton"
                                         Content="Browse ISO..."
                                         VerticalAlignment="Bottom"
                                         Click="BrowseIso_Click" />
@@ -134,7 +136,8 @@
                                   PlaceholderText="Select a Windows image first"
                                   IsEnabled="False"
                                   MaxWidth="480"
-                                  HorizontalAlignment="Left">
+                                  HorizontalAlignment="Left"
+                                  SelectionChanged="ImageEdition_SelectionChanged">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Value}" />
@@ -152,7 +155,7 @@
                     <StackPanel Spacing="12">
                         <StackPanel Spacing="4">
                             <TextBlock Text="2. Installation destination" Style="{StaticResource SubtitleTextBlockStyle}" />
-                            <TextBlock Text="Select a physical disk and unused drive letters. This preview does not modify disks."
+                            <TextBlock Text="Select an eligible physical disk and unused drive letters. The entire selected disk will be erased during installation."
                                        TextWrapping="Wrap"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </StackPanel>
@@ -191,7 +194,7 @@
                                      SelectionChanged="DriveLetter_SelectionChanged" />
                             <ComboBox x:Name="EfiDriveBox"
                                      Grid.Row="1"
-                                     Header="EFI drive letter"
+                                     Header="Boot / EFI drive letter"
                                      PlaceholderText="Select an unused letter"
                                      IsEnabled="False"
                                      DropDownOpened="DriveLetter_DropDownOpened"
@@ -200,7 +203,8 @@
                                      Grid.Row="2"
                                      Grid.Column="1"
                                      Header="Optional drivers folder"
-                                     PlaceholderText="Not required" />
+                                     PlaceholderText="Not required"
+                                     TextChanged="DriversPath_TextChanged" />
                             <TextBlock x:Name="DestinationStatus"
                                        Grid.Row="2"
                                        TextWrapping="Wrap"
@@ -236,8 +240,31 @@
                     <StackPanel Spacing="12">
                         <TextBlock Text="Review your setup" Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock x:Name="ReviewSummary" TextWrapping="Wrap" />
-                        <TextBlock Text="No changes have been made to your computer."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <InfoBar IsOpen="True"
+                                 Severity="Warning"
+                                 IsClosable="False"
+                                 Title="This operation is destructive"
+                                 Message="The selected disk will be cleaned and repartitioned. All existing data on that disk will be lost." />
+                        <CheckBox x:Name="ConfirmDiskEraseCheckBox"
+                                  IsEnabled="False"
+                                  Checked="ConfirmDiskEraseCheckBox_Changed"
+                                  Unchecked="ConfirmDiskEraseCheckBox_Changed" />
+                        <Button x:Name="InstallButton"
+                                Content="Erase disk and install Windows"
+                                IsEnabled="False"
+                                HorizontalAlignment="Left"
+                                Click="InstallWindows_Click" />
+                        <StackPanel x:Name="InstallationProgressPanel"
+                                    Orientation="Horizontal"
+                                    Spacing="10"
+                                    Visibility="Collapsed">
+                            <ProgressRing IsActive="True"
+                                          Width="24"
+                                          Height="24" />
+                            <TextBlock x:Name="InstallationProgressText"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
                 </StackPanel>

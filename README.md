@@ -45,9 +45,9 @@ All build scripts are in the root folder. Run them from **Command Prompt** or **
 
 ---
 
-### WinUI preview
+### WinUI installer
 
-The `WindowsInstallerUI` project is an early WinUI 3 front end with a fixed 1024x768 window and system, light, and dark themes under the Appearance menu. It can mount a Windows ISO or search an already-mounted drive recursively for `install.wim` and `install.esd` files, then scan a selected image for Windows editions. It also lists detected physical disks and unused drive letters for the planned Windows and EFI volumes, rechecking selected letters as you choose them and before review. The app requests administrator privileges to inspect image editions and disks. This preview does **not** format disks or deploy Windows yet.
+The `WindowsInstallerUI` project is a WinUI 3 frontend with a fixed 1024x768 window and system, light, and dark themes under the Appearance menu. It can mount a Windows ISO or search an already-mounted drive recursively for `install.wim` and `install.esd` files, then scan a selected image for Windows editions. Select an eligible physical disk, unused Windows and boot-partition drive letters, and optionally a drivers folder. The installer validates the setup, asks you to acknowledge the data loss, and then requires a final confirmation before cleaning and repartitioning the selected disk, applying the Windows image, optionally adding drivers, and installing boot files. The running Windows/boot disk is excluded and rechecked immediately before formatting. Installation requires administrator privileges. Disk changes are destructive and cannot be rolled back; use only a disk whose contents you are prepared to lose.
 
 Open `Windows Installer.sln` in Visual Studio with the workloads above, select the `WindowsInstallerUI` startup project and the `x64` platform, then run it. You can also use:
 

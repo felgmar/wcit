@@ -322,43 +322,148 @@ namespace WindowsInstallerLib
             ArgumentOutOfRangeException.ThrowIfEqual(parameters.ImageIndex, -1);
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType, parameters.FirmwareType);
 
-            try
-            {
-                DiskManager.FormatDisk(ref parameters);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred while formatting the disk: {ex}", ConsoleColor.Red);
-            }
+            DiskManager.FormatDisk(ref parameters);
         }
 
         public static void InstallWindows(ref Parameters parameters)
         {
-            try
+            InstallWindows(ref parameters, null);
+        }
+
+        private static void InstallWindows(ref Parameters parameters, IProgress<string>? progress)
+        {
+            progress?.Report("Applying the selected Windows image...");
+            int imageExitCode = DeployManager.ApplyImage(ref parameters);
+            if (imageExitCode != 0)
             {
-                DeployManager.ApplyImage(ref parameters);
-            }
-            catch
-            {
-                throw;
+                throw new InvalidOperationException($"Applying the Windows image failed with exit code {imageExitCode}.");
             }
 
-            try
+            if (!string.IsNullOrWhiteSpace(parameters.AdditionalDrive))
             {
+                progress?.Report("Installing additional drivers...");
+                if (!Directory.Exists(parameters.AdditionalDrive))
+                {
+                    throw new DirectoryNotFoundException($"The drivers folder {parameters.AdditionalDrive} does not exist.");
+                }
+
                 DeployManager.InstallAdditionalDrivers(ref parameters);
             }
-            catch
+
+            progress?.Report("Installing Windows boot files...");
+            int bootloaderExitCode = DeployManager.InstallBootloader(ref parameters);
+            if (bootloaderExitCode != 0)
             {
-                throw;
+                throw new InvalidOperationException($"Installing the bootloader failed with exit code {bootloaderExitCode}.");
+            }
+        }
+
+        /// <summary>
+        /// Validates all selected installation parameters without changing disks.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public static void ValidateInstallationParameters(ref Parameters parameters)
+        {
+            if (!PrivilegesManager.IsAdmin())
+            {
+                throw new UnauthorizedAccessException("Run the installer with administrator privileges.");
             }
 
-            try
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.SourceDrive, nameof(parameters.SourceDrive));
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.ImageFilePath, nameof(parameters.ImageFilePath));
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType, nameof(parameters.FirmwareType));
+            ArgumentOutOfRangeException.ThrowIfNegative(parameters.DiskNumber, nameof(parameters.DiskNumber));
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(parameters.ImageIndex, nameof(parameters.ImageIndex));
+
+            string imagePath = Path.GetFullPath(parameters.ImageFilePath);
+            if (!File.Exists(imagePath))
             {
-                DeployManager.InstallBootloader(ref parameters);
+                throw new FileNotFoundException("The selected Windows image no longer exists.", imagePath);
             }
-            catch
+
+            string extension = Path.GetExtension(imagePath);
+            if (!string.Equals(extension, ".wim", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(extension, ".esd", StringComparison.OrdinalIgnoreCase))
             {
-                throw;
+                throw new InvalidDataException("The selected image must be a .wim or .esd file.");
+            }
+
+            if (!Directory.Exists(parameters.SourceDrive))
+            {
+                throw new DirectoryNotFoundException($"The installation media {parameters.SourceDrive} is not available.");
+            }
+
+            ValidateDriveLetter(parameters.DestinationDrive, nameof(parameters.DestinationDrive));
+            ValidateDriveLetter(parameters.EfiDrive, nameof(parameters.EfiDrive));
+            if (string.Equals(
+                    parameters.DestinationDrive,
+                    parameters.EfiDrive,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Windows and boot partitions must use different drive letters.");
+            }
+
+            if (!string.Equals(parameters.FirmwareType, "UEFI", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(parameters.FirmwareType, "BIOS", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException($"Unsupported firmware type: {parameters.FirmwareType}");
+            }
+
+            if (!GetDisks().ContainsKey(parameters.DiskNumber))
+            {
+                throw new InvalidDataException($"Disk {parameters.DiskNumber} is no longer available.");
+            }
+
+            if (DiskManager.GetProtectedDiskNumbers().Contains(parameters.DiskNumber))
+            {
+                throw new InvalidOperationException(
+                    $"Disk {parameters.DiskNumber} contains the running Windows or boot partition and cannot be erased.");
+            }
+
+            if (!IsDriveLetterAvailable(parameters.DestinationDrive) ||
+                !IsDriveLetterAvailable(parameters.EfiDrive))
+            {
+                throw new InvalidOperationException("A selected installation drive letter is already in use.");
+            }
+
+            if (!GetImageEditions(imagePath).ContainsKey(parameters.ImageIndex))
+            {
+                throw new InvalidDataException(
+                    $"Windows image index {parameters.ImageIndex} is not present in {imagePath}.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters.AdditionalDrive) &&
+                !Directory.Exists(parameters.AdditionalDrive))
+            {
+                throw new DirectoryNotFoundException($"The drivers folder {parameters.AdditionalDrive} does not exist.");
+            }
+
+            parameters.ImageFilePath = imagePath;
+            parameters.FirmwareType = parameters.FirmwareType.ToUpperInvariant();
+        }
+
+        /// <summary>
+        /// Validates the selected setup, formats the target disk, applies the Windows image,
+        /// optionally installs drivers, and writes the boot files.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public static void Install(ref Parameters parameters, IProgress<string>? progress = null)
+        {
+            ValidateInstallationParameters(ref parameters);
+            progress?.Report($"Formatting and partitioning disk {parameters.DiskNumber}...");
+            Prepare(ref parameters);
+            InstallWindows(ref parameters, progress);
+            progress?.Report("Windows installation completed successfully.");
+        }
+
+        private static void ValidateDriveLetter(string driveLetter, string parameterName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(driveLetter, parameterName);
+            if (driveLetter.Length != 2 ||
+                !char.IsAsciiLetter(driveLetter[0]) ||
+                driveLetter[1] != ':')
+            {
+                throw new ArgumentException("A drive letter must be in the format W:.", parameterName);
             }
         }
 
@@ -388,6 +493,24 @@ namespace WindowsInstallerLib
         public static SortedDictionary<int, string> GetDisks()
         {
             return DiskManager.GetDisks();
+        }
+
+        /// <summary>
+        /// Gets the disk numbers containing the running Windows installation or an active boot partition.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public static HashSet<int> GetProtectedDiskNumbers()
+        {
+            return DiskManager.GetProtectedDiskNumbers();
+        }
+
+        /// <summary>
+        /// Gets the firmware mode of the current computer.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public static string GetFirmwareType()
+        {
+            return SystemInfoManager.IsEFI() ? "UEFI" : "BIOS";
         }
 
         /// <summary>

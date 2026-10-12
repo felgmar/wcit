@@ -177,7 +177,12 @@ namespace WindowsInstallerLib
             }
 
             Console.WriteLine($"\n==> Deploying Windows to drive {parameters.DestinationDrive} in disk {parameters.DiskNumber}, please wait...");
-            ProcessManager.StartDismProcess(@$"/apply-image /imagefile:{parameters.ImageFilePath} /applydir:{parameters.DestinationDrive} /index:{parameters.ImageIndex} /verify");
+            ProcessManager.StartDismProcess(
+                "/apply-image",
+                $"/imagefile:{parameters.ImageFilePath}",
+                $"/applydir:{parameters.DestinationDrive}\\",
+                $"/index:{parameters.ImageIndex}",
+                "/verify");
             return ProcessManager.ExitCode;
         }
 
@@ -337,47 +342,19 @@ namespace WindowsInstallerLib
         /// <exception cref="UnauthorizedAccessException"></exception>
         internal static void InstallAdditionalDrivers(ref Parameters parameters)
         {
-            bool IS_ADMIN = PrivilegesManager.IsAdmin();
-
             DismSession? session = null;
 
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.AdditionalDrive, nameof(parameters));
 
-            switch (IS_ADMIN)
+            if (!PrivilegesManager.IsAdmin())
             {
-                case true:
-                    try
-                    {
-                        DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
-                    }
-                    catch (DismException)
-                    {
-                        throw;
-                    }
-                    catch (Exception)
-                    {
-                        throw;
-                    }
-                    break;
-                case false:
-                    throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
+                throw new UnauthorizedAccessException("You do not have enough privileges to initialize the DISM API.");
             }
 
             try
             {
+                DismApi.Initialize(DismLogLevel.LogErrorsWarnings);
                 session ??= DismApi.OpenOfflineSession(parameters.DestinationDrive);
-            }
-            catch (DismException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-
-            try
-            {
                 DismApi.AddDriversEx(session, parameters.AdditionalDrive, false, true);
             }
             finally
@@ -406,35 +383,39 @@ namespace WindowsInstallerLib
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.EfiDrive, nameof(parameters));
             ArgumentException.ThrowIfNullOrWhiteSpace(parameters.FirmwareType, nameof(parameters));
 
-            bool IS_ADMIN = PrivilegesManager.IsAdmin();
-
-            string EFI_BOOT_PATH = Path.Join(parameters.EfiDrive, @"\EFI\Boot");
-            string EFI_MICROSOFT_PATH = Path.Join(parameters.EfiDrive, @"\EFI\Microsoft");
-            string WINDIR_PATH = Path.Join(parameters.DestinationDrive, @"\windows");
-
-            bool EFI_BOOT_EXISTS = Directory.Exists(EFI_BOOT_PATH);
-            bool EFI_MICROSOFT_EXISTS = Directory.Exists(EFI_MICROSOFT_PATH);
-            bool WINDIR_EXISTS = Directory.Exists(WINDIR_PATH);
-
-            if (IS_ADMIN)
+            if (!PrivilegesManager.IsAdmin())
             {
                 throw new UnauthorizedAccessException($"You do not have enough privileges to install the bootloader to {parameters.EfiDrive}");
             }
 
+            string bootDriveRoot = $@"{parameters.EfiDrive}\";
+            string windowsPath = $@"{parameters.DestinationDrive}\Windows";
+            if (!Directory.Exists(windowsPath))
+            {
+                throw new DirectoryNotFoundException($"The Windows directory {windowsPath} does not exist.");
+            }
+
+            if (string.Equals(parameters.FirmwareType, "UEFI", StringComparison.OrdinalIgnoreCase) &&
+                (Directory.Exists(Path.Combine(bootDriveRoot, "EFI", "Boot")) ||
+                 Directory.Exists(Path.Combine(bootDriveRoot, "EFI", "Microsoft"))))
+            {
+                throw new IOException($"The EFI drive {parameters.EfiDrive} already contains boot files.");
+            }
+
             try
             {
-                if (EFI_BOOT_EXISTS || EFI_MICROSOFT_EXISTS)
-                {
-                    throw new IOException($"The drive letter {parameters.EfiDrive} is already in use.");
-                }
-
-                if (!WINDIR_EXISTS)
-                {
-                    throw new DirectoryNotFoundException(@$"The directory {WINDIR_PATH} does not exist!");
-                }
-
                 Console.WriteLine($"\n==> Installing bootloader to drive {parameters.EfiDrive} in disk {parameters.DiskNumber}");
-                ProcessManager.StartCmdProcess("bcdboot.exe", @$"{WINDIR_PATH} /s {parameters.EfiDrive} /f {parameters.FirmwareType}");
+                int exitCode = ProcessManager.StartCmdProcess(
+                    "bcdboot.exe",
+                    windowsPath,
+                    "/s",
+                    parameters.EfiDrive,
+                    "/f",
+                    parameters.FirmwareType);
+                if (exitCode != 0)
+                {
+                    throw new IOException($"BCDBoot failed with exit code {exitCode}.");
+                }
             }
             catch (IOException)
             {

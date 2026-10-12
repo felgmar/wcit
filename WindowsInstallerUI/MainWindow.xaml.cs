@@ -19,9 +19,11 @@ public sealed partial class MainWindow : Window
     private int _editionScanVersion;
     private bool _isLoadingDestinationOptions;
     private bool _isUpdatingDriveChoices;
+    private bool _isInstalling;
     private int? _targetDiskNumber;
     private readonly UISettings _uiSettings = new();
     private ElementTheme _selectedTheme = ElementTheme.Default;
+    private readonly Dictionary<Control, bool> _enabledStateBeforeInstall = [];
 
     public MainWindow()
     {
@@ -59,14 +61,18 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            (SortedDictionary<int, string> disks, List<string> driveLetters) = await Task.Run(
-                () => (InstallerManager.GetDisks(), InstallerManager.GetAvailableDriveLetters()));
+            (SortedDictionary<int, string> disks, HashSet<int> protectedDiskNumbers, List<string> driveLetters) =
+                await Task.Run(() =>
+                    (InstallerManager.GetDisks(),
+                     InstallerManager.GetProtectedDiskNumbers(),
+                     InstallerManager.GetAvailableDriveLetters()));
 
             TargetDiskBox.ItemsSource = disks
+                .Where(disk => !protectedDiskNumbers.Contains(disk.Key))
                 .Select(disk => new DiskOption(disk.Key, disk.Value))
                 .ToArray();
-            TargetDiskBox.IsEnabled = disks.Count > 0;
-            if (disks.Count > 0)
+            TargetDiskBox.IsEnabled = TargetDiskBox.Items.Count > 0;
+            if (TargetDiskBox.Items.Count > 0)
             {
                 TargetDiskBox.SelectedIndex = 0;
             }
@@ -85,9 +91,11 @@ public sealed partial class MainWindow : Window
 
             DestinationStatus.Text = disks.Count == 0
                 ? "No physical disks were found."
+                : TargetDiskBox.Items.Count == 0
+                    ? "No eligible target disks were found. The current Windows and boot disks are protected."
                 : _availableDriveLetters.Count < 2
                     ? "At least two unused drive letters are needed."
-                    : $"Found {disks.Count} physical disk(s) and {_availableDriveLetters.Count} unused drive letter(s).";
+                    : $"Found {TargetDiskBox.Items.Count} eligible disk(s); current Windows and boot disks are excluded. {_availableDriveLetters.Count} unused drive letter(s) are available.";
         }
         catch (Exception ex)
         {
@@ -259,7 +267,7 @@ public sealed partial class MainWindow : Window
 
     private async void ImageFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        ReviewCard.Visibility = Visibility.Collapsed;
+        InvalidateReview();
         StatusBar.IsOpen = false;
 
         if (ImageFilesBox.SelectedItem is string imagePath)
@@ -268,69 +276,298 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void ReviewSetup_Click(object sender, RoutedEventArgs e)
+    private async void ReviewSetup_Click(object sender, RoutedEventArgs e)
     {
-        if (ImageFilesBox.SelectedItem is not string imagePath)
-        {
-            ShowValidationError("Find and select a Windows image file before reviewing the setup.");
-            return;
-        }
-
-        if (ImageEditionBox.SelectedItem is not KeyValuePair<int, string> edition)
-        {
-            ShowValidationError("Scan the selected image and choose a Windows edition.");
-            return;
-        }
-
-        if (_targetDiskNumber is not int targetDiskNumber)
-        {
-            ShowValidationError("Select a target installation disk.");
-            return;
-        }
-
-        if (WindowsDriveBox.SelectedItem is not string windowsDrive ||
-            EfiDriveBox.SelectedItem is not string efiDrive ||
-            string.Equals(windowsDrive, efiDrive, StringComparison.OrdinalIgnoreCase))
-        {
-            ShowValidationError("Select different unused drive letters for Windows and EFI.");
-            return;
-        }
+        InvalidateReview();
+        ReviewButton.IsEnabled = false;
+        SetInstallerBusy(true);
+        bool reviewValidated = false;
 
         try
         {
-            if (!InstallerManager.IsDriveLetterAvailable(windowsDrive) ||
-                !InstallerManager.IsDriveLetterAvailable(efiDrive))
+            if (ImageFilesBox.SelectedItem is not string imagePath)
             {
-                DriveLetterError.Message = "A selected drive letter is now in use. Choose different unused letters.";
-                DriveLetterError.IsOpen = true;
-                RefreshDriveLetterChoices();
+                ShowValidationError("Find and select a Windows image file before reviewing the setup.");
                 return;
             }
+
+            if (ImageEditionBox.SelectedItem is not KeyValuePair<int, string> edition)
+            {
+                ShowValidationError("Scan the selected image and choose a Windows edition.");
+                return;
+            }
+
+            if (_targetDiskNumber is not int targetDiskNumber)
+            {
+                ShowValidationError("Select a target installation disk.");
+                return;
+            }
+
+            if (WindowsDriveBox.SelectedItem is not string windowsDrive ||
+                EfiDriveBox.SelectedItem is not string efiDrive ||
+                string.Equals(windowsDrive, efiDrive, StringComparison.OrdinalIgnoreCase))
+            {
+                ShowValidationError("Select different unused drive letters for Windows and EFI.");
+                return;
+            }
+
+            try
+            {
+                if (!InstallerManager.IsDriveLetterAvailable(windowsDrive) ||
+                    !InstallerManager.IsDriveLetterAvailable(efiDrive))
+                {
+                    DriveLetterError.Message = "A selected drive letter is now in use. Choose different unused letters.";
+                    DriveLetterError.IsOpen = true;
+                    RefreshDriveLetterChoices();
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                DriveLetterError.Message = $"Could not check whether the selected drive letters are available: {ex.Message}";
+                DriveLetterError.IsOpen = true;
+                return;
+            }
+
+            DriveLetterError.IsOpen = false;
+            StatusBar.IsOpen = false;
+            Parameters parameters = CreateInstallationParameters(
+                imagePath,
+                edition.Key,
+                targetDiskNumber,
+                windowsDrive,
+                efiDrive);
+            await Task.Run(() => ValidateInstallationParameters(parameters));
+
+            ReviewSummary.Text =
+                $"Media type: {(MediaTypeBox.SelectedIndex == 0 ? "ISO file" : "Mounted drive")}\n" +
+                $"Image: {imagePath}\n" +
+                $"Windows edition: {edition.Value} (index {edition.Key})\n" +
+                $"Target disk number: {targetDiskNumber} - {(TargetDiskBox.SelectedItem as DiskOption)?.Model}\n" +
+                $"Windows drive: {windowsDrive}\n" +
+                $"Boot / EFI drive: {efiDrive}\n" +
+                $"Firmware: {parameters.FirmwareType}\n" +
+                $"Drivers folder: {(string.IsNullOrWhiteSpace(parameters.AdditionalDrive) ? "None" : parameters.AdditionalDrive)}";
+            ConfirmDiskEraseCheckBox.Content =
+                $"I understand that all data on Disk {targetDiskNumber} will be permanently erased.";
+            ConfirmDiskEraseCheckBox.IsChecked = false;
+            InstallButton.IsEnabled = false;
+            ReviewCard.Visibility = Visibility.Visible;
+            reviewValidated = true;
         }
         catch (Exception ex)
         {
-            DriveLetterError.Message = $"Could not check whether the selected drive letters are available: {ex.Message}";
-            DriveLetterError.IsOpen = true;
+            ShowValidationError($"Setup validation failed: {ex.Message}");
+        }
+        finally
+        {
+            SetInstallerBusy(false);
+            ReviewButton.IsEnabled = true;
+            if (reviewValidated)
+            {
+                ConfirmDiskEraseCheckBox.IsEnabled = true;
+            }
+        }
+    }
+
+    private async void InstallWindows_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isInstalling ||
+            ConfirmDiskEraseCheckBox.IsChecked != true ||
+            ImageFilesBox.SelectedItem is not string imagePath ||
+            ImageEditionBox.SelectedItem is not KeyValuePair<int, string> edition ||
+            _targetDiskNumber is not int targetDiskNumber ||
+            WindowsDriveBox.SelectedItem is not string windowsDrive ||
+            EfiDriveBox.SelectedItem is not string efiDrive)
+        {
+            ShowValidationError("Review the setup and confirm that the selected disk can be erased before installing.");
             return;
         }
 
-        DriveLetterError.IsOpen = false;
+        ContentDialog confirmationDialog = new()
+        {
+            XamlRoot = RootLayout.XamlRoot,
+            Title = $"Erase Disk {targetDiskNumber} and install Windows?",
+            Content =
+                $"This permanently deletes every partition and all files on Disk {targetDiskNumber} " +
+                $"({(TargetDiskBox.SelectedItem as DiskOption)?.Model}). Windows {edition.Value} will be installed " +
+                $"from {imagePath}. This action cannot be undone.",
+            PrimaryButtonText = "Erase disk and install",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+
+        if (await confirmationDialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        Parameters parameters;
+        try
+        {
+            parameters = CreateInstallationParameters(
+                imagePath,
+                edition.Key,
+                targetDiskNumber,
+                windowsDrive,
+                efiDrive);
+        }
+        catch (Exception ex)
+        {
+            ShowValidationError($"Could not prepare the installation settings: {ex.Message}");
+            return;
+        }
+
+        _isInstalling = true;
+        bool installationSucceeded = false;
+        SetInstallerBusy(true);
         StatusBar.IsOpen = false;
-        ReviewSummary.Text =
-            $"Media type: {(MediaTypeBox.SelectedIndex == 0 ? "ISO file" : "Mounted drive")}\n" +
-            $"Image: {imagePath}\n" +
-            $"Windows edition: {edition.Value} (index {edition.Key})\n" +
-            $"Target disk number: {targetDiskNumber}\n" +
-            $"Windows drive: {windowsDrive}\n" +
-            $"EFI drive: {efiDrive}\n" +
-            $"Drivers folder: {(string.IsNullOrWhiteSpace(DriversPathBox.Text) ? "None" : DriversPathBox.Text.Trim())}";
-        ReviewCard.Visibility = Visibility.Visible;
+        InstallationProgressPanel.Visibility = Visibility.Visible;
+        InstallationProgressText.Text = "Starting installation...";
+
+        try
+        {
+            IProgress<string> progress = new Progress<string>(
+                message => InstallationProgressText.Text = message);
+            await Task.Run(() => InstallWindows(parameters, progress));
+            InstallationProgressText.Text = "Windows was installed successfully. You can close the installer.";
+            InstallationProgressPanel.Visibility = Visibility.Collapsed;
+            StatusBar.Severity = InfoBarSeverity.Success;
+            StatusBar.Title = "Installation complete";
+            StatusBar.Message = "Windows was applied and its boot files were installed successfully.";
+            StatusBar.IsOpen = true;
+            ConfirmDiskEraseCheckBox.IsChecked = false;
+            InstallButton.IsEnabled = false;
+            installationSucceeded = true;
+        }
+        catch (Exception ex)
+        {
+            InstallationProgressPanel.Visibility = Visibility.Collapsed;
+            StatusBar.Severity = InfoBarSeverity.Error;
+            StatusBar.Title = "Installation failed";
+            StatusBar.Message =
+                $"The installation stopped: {ex.Message} Any changes already made to Disk {targetDiskNumber} are not rolled back.";
+            StatusBar.IsOpen = true;
+        }
+        finally
+        {
+            SetInstallerBusy(false);
+            if (installationSucceeded)
+            {
+                ReviewButton.IsEnabled = false;
+                ConfirmDiskEraseCheckBox.IsEnabled = false;
+                InstallButton.IsEnabled = false;
+            }
+
+            _isInstalling = false;
+        }
+    }
+
+    private Parameters CreateInstallationParameters(
+        string imagePath,
+        int imageIndex,
+        int diskNumber,
+        string windowsDrive,
+        string efiDrive)
+    {
+        string fullImagePath = Path.GetFullPath(imagePath);
+        string sourceDrive = Path.GetPathRoot(fullImagePath)
+            ?? throw new InvalidDataException("Could not determine the source drive for the selected image.");
+
+        return new Parameters(
+            windowsDrive,
+            efiDrive,
+            diskNumber,
+            sourceDrive,
+            imageIndex,
+            fullImagePath,
+            DriversPathBox.Text.Trim(),
+            InstallerManager.GetFirmwareType());
+    }
+
+    private static void ValidateInstallationParameters(Parameters parameters)
+    {
+        InstallerManager.ValidateInstallationParameters(ref parameters);
+    }
+
+    private static void InstallWindows(Parameters parameters, IProgress<string> progress)
+    {
+        InstallerManager.Install(ref parameters, progress);
+    }
+
+    private void SetInstallerBusy(bool isBusy)
+    {
+        Control[] controls =
+        [
+            MediaTypeBox,
+            BrowseIsoButton,
+            DriveLetterBox,
+            FindImageButton,
+            ImageFilesBox,
+            ImageEditionBox,
+            TargetDiskBox,
+            WindowsDriveBox,
+            EfiDriveBox,
+            DriversPathBox,
+            ReviewButton,
+            ConfirmDiskEraseCheckBox,
+            InstallButton
+        ];
+
+        if (isBusy)
+        {
+            _enabledStateBeforeInstall.Clear();
+            foreach (Control control in controls)
+            {
+                _enabledStateBeforeInstall.Add(control, control.IsEnabled);
+                control.IsEnabled = false;
+            }
+
+            return;
+        }
+
+        foreach ((Control control, bool wasEnabled) in _enabledStateBeforeInstall)
+        {
+            control.IsEnabled = wasEnabled;
+        }
+
+        _enabledStateBeforeInstall.Clear();
+    }
+
+    private void ConfirmDiskEraseCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        InstallButton.IsEnabled = ConfirmDiskEraseCheckBox.IsEnabled &&
+                                  ConfirmDiskEraseCheckBox.IsChecked == true &&
+                                  !_isInstalling;
+    }
+
+    private void ImageEdition_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        InvalidateReview();
+    }
+
+    private void DriversPath_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        InvalidateReview();
+    }
+
+    private void InvalidateReview()
+    {
+        if (_isInstalling)
+        {
+            return;
+        }
+
+        ReviewCard.Visibility = Visibility.Collapsed;
+        ConfirmDiskEraseCheckBox.IsEnabled = false;
+        ConfirmDiskEraseCheckBox.IsChecked = false;
+        InstallButton.IsEnabled = false;
     }
 
     private void TargetDisk_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _targetDiskNumber = (TargetDiskBox.SelectedItem as DiskOption)?.DiskNumber;
-        ReviewCard.Visibility = Visibility.Collapsed;
+        InvalidateReview();
     }
 
     private void DriveLetter_DropDownOpened(object sender, object e)
@@ -388,7 +625,7 @@ public sealed partial class MainWindow : Window
             _isUpdatingDriveChoices = false;
         }
 
-        ReviewCard.Visibility = Visibility.Collapsed;
+        InvalidateReview();
     }
 
     private void RefreshDriveLetterChoices()
@@ -563,15 +800,17 @@ public sealed partial class MainWindow : Window
         ImageEditionBox.ItemsSource = null;
         ImageEditionBox.IsEnabled = false;
         ImageSearchStatus.Text = string.Empty;
-        ReviewCard.Visibility = Visibility.Collapsed;
+        InvalidateReview();
         StatusBar.IsOpen = false;
     }
 
     private void ShowValidationError(string message)
     {
+        StatusBar.Severity = InfoBarSeverity.Error;
+        StatusBar.Title = "Setup error";
         StatusBar.Message = message;
         StatusBar.IsOpen = true;
-        ReviewCard.Visibility = Visibility.Collapsed;
+        InvalidateReview();
     }
 
     private sealed record DiskOption(int DiskNumber, string Model);
