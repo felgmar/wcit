@@ -56,6 +56,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
       - name: Download installer artifact
         uses: actions/download-artifact@v4.3.0
         with:
