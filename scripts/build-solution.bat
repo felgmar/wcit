@@ -10,9 +10,24 @@ if not exist "!MSBUILD!" goto no_msbuild
 
 set "PUBLISH_PROPERTY="
 if /i "%~1"=="Publish" set "PUBLISH_PROPERTY=-p:PublishDir="%~dp0..\build\publish""
+set "UI_VERSION_PROPERTY="
+if defined VERSION set "UI_VERSION_PROPERTY=-p:WindowsInstallerUIVersion=!VERSION!"
 
-"%MSBUILD%" "%~dp0..\Windows Installer.slnx" -restore -m -p:Platform=x64 -p:Configuration=%~2 -p:OutputPath="%~dp0..\build" -p:SelfContained=true -target:%~1 -verbosity:minimal !PUBLISH_PROPERTY!
-exit /b %ERRORLEVEL%
+"%MSBUILD%" "%~dp0..\Windows Installer.slnx" -restore -p:Platform=x64 -p:Configuration=%~2 -p:OutputPath="%~dp0..\build" -p:SelfContained=true -target:%~1 -verbosity:minimal !PUBLISH_PROPERTY! !UI_VERSION_PROPERTY!
+if errorlevel 1 exit /b %ERRORLEVEL%
+
+if /i "%~1"=="Publish" (
+    for %%F in (WindowsInstallerUI.pri App.xbf MainWindow.xbf) do (
+        if not exist "%~dp0..\build\%%F" (
+            echo Required WinUI resource file was not generated: %%F
+            exit /b 1
+        )
+        copy /Y "%~dp0..\build\%%F" "%~dp0..\build\publish\%%F" >nul
+        if errorlevel 1 exit /b 1
+    )
+)
+
+exit /b 0
 
 :no_vswhere
 ECHO Could not find Visual Studio Installer (vswhere.exe). Install Visual Studio with the WinUI application development workload.

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -53,7 +54,10 @@ public sealed partial class MainWindow : Window
 
     private static string GetApplicationVersion()
     {
-        return typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+        string? version = typeof(MainWindow).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+        return version?.Split('+')[0] ?? "1.0.0";
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
